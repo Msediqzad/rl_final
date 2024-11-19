@@ -1,12 +1,11 @@
 """
 Training script for the architectural space planning agent.
-Uses curriculum learning to gradually increase layout complexity.
 """
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 from collections import deque
 import random
 import json
@@ -21,7 +20,6 @@ from architectural_principles import (
     ArchitecturalConstraints,
     RoomRequirements
 )
-from visualization_principles import ArchitecturalVisualization
 
 class DeepArchitecturalAgent(nn.Module):
     """Deep learning agent for architectural space planning."""
@@ -65,8 +63,8 @@ class DeepArchitecturalAgent(nn.Module):
             nn.Linear(hidden_dim, 2)  # (width, height)
         )
         
-        self.optimizer = optim.Adam(self.parameters(), lr=0.001)  # Increased learning rate
-        self.placed_rooms = set()  # Track which room types have been placed
+        self.optimizer = optim.Adam(self.parameters(), lr=0.001)
+        self.placed_rooms = set()
         
     def forward(self, state: torch.Tensor):
         """Forward pass through the network."""
@@ -74,8 +72,8 @@ class DeepArchitecturalAgent(nn.Module):
         shared_features = self.shared(x)
         
         room_type_logits = self.room_type(shared_features)
-        position = torch.sigmoid(self.position(shared_features))  # Normalize to [0, 1]
-        size = torch.sigmoid(self.size(shared_features))  # Normalize to [0, 1]
+        position = torch.sigmoid(self.position(shared_features))
+        size = torch.sigmoid(self.size(shared_features))
         
         return room_type_logits, position, size
     
@@ -85,13 +83,12 @@ class DeepArchitecturalAgent(nn.Module):
             state_tensor = torch.FloatTensor(state).unsqueeze(0)
             room_type_logits, position, size = self(state_tensor)
             
-            # Filter available room types to those not yet placed
+            # Filter available room types
             available_types = [rt for rt in requirements.keys() if rt not in self.placed_rooms]
             if not available_types:
-                self.placed_rooms.clear()  # Reset if all rooms have been placed
+                self.placed_rooms.clear()
                 available_types = list(requirements.keys())
             
-            # Sample room type from available types
             room_type = random.choice(available_types)
             self.placed_rooms.add(room_type)
             
@@ -120,31 +117,41 @@ class DeepArchitecturalAgent(nn.Module):
         """Reset agent's internal state."""
         self.placed_rooms.clear()
 
-def train_agent(epochs: int = 1500,  # Reduced total epochs
+    @staticmethod
+    def create_model_for_requirements(requirements: dict) -> 'DeepArchitecturalAgent':
+        """Create a model with the correct dimensions for given requirements."""
+        grid_size = requirements['building_size']
+        n_room_types = len(requirements['room_types'])
+        
+        model = DeepArchitecturalAgent(
+            grid_size=grid_size,
+            n_room_types=n_room_types
+        )
+        
+        # Initialize weights
+        def init_weights(m):
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.zeros_(m.bias)
+        
+        model.apply(init_weights)
+        return model
+
+def train_agent(epochs: int = 1500,
                 batch_size: int = 32,
                 curriculum_stages: int = 5,
-                save_dir: str = 'models'):
-    """
-    Train the architectural planning agent using curriculum learning.
-    
-    Args:
-        epochs: Number of training epochs (300 per stage)
-        batch_size: Training batch size
-        curriculum_stages: Number of curriculum difficulty stages
-        save_dir: Directory to save models and training results
-    """
+                save_dir: str = 'models',
+                grid_size: tuple = (12, 12)):
+    """Train the architectural planning agent."""
     print("\nInitializing Training...")
+    print(f"Grid Size: {grid_size}")
     print(f"Total Epochs: {epochs}")
     print(f"Epochs per Stage: {epochs // curriculum_stages}")
-    print(f"Batch Size: {batch_size}")
-    print(f"Curriculum Stages: {curriculum_stages}")
     
-    # Create save directory
     save_dir = Path(save_dir)
     save_dir.mkdir(exist_ok=True)
     
-    # Initialize environment and agent
-    grid_size = (12, 12)
+    # Initialize environment
     room_types = [
         RoomType.ENTRY,
         RoomType.LIVING,
@@ -160,6 +167,7 @@ def train_agent(epochs: int = 1500,  # Reduced total epochs
         requirements=ArchitecturalConstraints.default_room_requirements()
     )
     
+    # Create agent
     agent = DeepArchitecturalAgent(
         grid_size=grid_size,
         n_room_types=len(room_types)
@@ -195,14 +203,9 @@ def train_agent(epochs: int = 1500,  # Reduced total epochs
             # Collect experience
             episode_buffer = []
             while not done:
-                # Select action
                 action = agent.act(state, env.requirements)
-                
-                # Execute action
                 next_state, reward, done, info = env.step(action)
                 episode_reward += reward
-                
-                # Store transition
                 episode_buffer.append((state, action, reward, next_state, done))
                 
                 if done or len(env.room_info) >= max_rooms:
@@ -216,20 +219,15 @@ def train_agent(epochs: int = 1500,  # Reduced total epochs
             # Train on mini-batches
             if len(replay_buffer) >= batch_size:
                 batch = random.sample(replay_buffer, batch_size)
-                
-                # Unpack batch
                 states, actions, rewards, next_states, dones = zip(*batch)
                 
-                # Convert to tensors
                 state_tensor = torch.FloatTensor(np.array(states))
                 reward_tensor = torch.FloatTensor(rewards)
                 
-                # Update agent
                 agent.optimizer.zero_grad()
                 room_type_logits, position, size = agent(state_tensor)
                 
-                # Calculate loss (simplified)
-                loss = -torch.mean(reward_tensor)  # Maximize reward
+                loss = -torch.mean(reward_tensor)
                 loss.backward()
                 agent.optimizer.step()
             
@@ -242,72 +240,82 @@ def train_agent(epochs: int = 1500,  # Reduced total epochs
             metrics['room_counts'].append(len(env.room_info))
             
             # Save intermediate visualizations
-            if epoch % 50 == 0:  # Increased visualization frequency
-                visualizer = ArchitecturalVisualization()
-                fig = visualizer.create_floor_plan(
-                    env.grid,
-                    env.room_info,
-                    title=f"Stage {stage + 1}, Epoch {epoch}",
-                    show_metrics=True
-                )
-                plt.savefig(save_dir / f'layout_stage{stage + 1}_epoch{epoch}.png')
-                plt.close()
+            if epoch % 50 == 0:
+                save_visualization(env, save_dir, stage, epoch)
         
         # Save stage model
-        torch.save(agent.state_dict(), save_dir / f'agent_stage{stage + 1}.pt')
+        torch.save({
+            'grid_size': grid_size,
+            'n_room_types': len(room_types),
+            'state_dict': agent.state_dict()
+        }, save_dir / f'agent_stage{stage + 1}.pt')
         
-        # Print stage metrics
-        print(f"\nStage {stage + 1} Results:")
-        print(f"Average Reward: {np.mean(metrics['rewards'][-100:]):.2f}")
-        print(f"Average Space Efficiency: {np.mean(metrics['space_efficiency'][-100:]):.2f}")
-        print(f"Average Adjacency Score: {np.mean(metrics['adjacency_scores'][-100:]):.2f}")
-        print(f"Average Natural Light Score: {np.mean(metrics['natural_light_scores'][-100:]):.2f}")
-        print(f"Average Privacy Score: {np.mean(metrics['privacy_scores'][-100:]):.2f}")
-        print(f"Average Room Count: {np.mean(metrics['room_counts'][-100:]):.1f}")
+        print_stage_metrics(metrics, stage)
     
     # Save final model and metrics
-    torch.save(agent.state_dict(), save_dir / 'agent_final.pt')
+    torch.save({
+        'grid_size': grid_size,
+        'n_room_types': len(room_types),
+        'state_dict': agent.state_dict()
+    }, save_dir / 'agent_final.pt')
+    
     with open(save_dir / 'training_metrics.json', 'w') as f:
         json.dump(metrics, f, indent=2)
     
-    # Plot training curves
     plot_training_curves(metrics, save_dir)
     
     print("\nTraining completed!")
     print(f"Model and metrics saved in: {save_dir}")
     return agent
 
+def save_visualization(env, save_dir: Path, stage: int, epoch: int):
+    """Save layout visualization."""
+    from visualization_principles import ArchitecturalVisualization
+    visualizer = ArchitecturalVisualization()
+    fig = visualizer.create_floor_plan(
+        env.grid,
+        env.room_info,
+        title=f"Stage {stage + 1}, Epoch {epoch}",
+        show_metrics=True
+    )
+    plt.savefig(save_dir / f'layout_stage{stage + 1}_epoch{epoch}.png')
+    plt.close()
+
+def print_stage_metrics(metrics: dict, stage: int):
+    """Print metrics for current stage."""
+    print(f"\nStage {stage + 1} Results:")
+    print(f"Average Reward: {np.mean(metrics['rewards'][-100:]):.2f}")
+    print(f"Average Space Efficiency: {np.mean(metrics['space_efficiency'][-100:]):.2f}")
+    print(f"Average Adjacency Score: {np.mean(metrics['adjacency_scores'][-100:]):.2f}")
+    print(f"Average Natural Light Score: {np.mean(metrics['natural_light_scores'][-100:]):.2f}")
+    print(f"Average Privacy Score: {np.mean(metrics['privacy_scores'][-100:]):.2f}")
+    print(f"Average Room Count: {np.mean(metrics['room_counts'][-100:]):.1f}")
+
 def plot_training_curves(metrics: dict, save_dir: Path):
     """Plot and save training metrics."""
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     fig.suptitle('Training Metrics')
     
-    # Plot rewards
     axes[0, 0].plot(metrics['rewards'])
     axes[0, 0].set_title('Rewards')
     axes[0, 0].set_xlabel('Episode')
     
-    # Plot space efficiency
     axes[0, 1].plot(metrics['space_efficiency'])
     axes[0, 1].set_title('Space Efficiency')
     axes[0, 1].set_xlabel('Episode')
     
-    # Plot adjacency scores
     axes[0, 2].plot(metrics['adjacency_scores'])
     axes[0, 2].set_title('Adjacency Scores')
     axes[0, 2].set_xlabel('Episode')
     
-    # Plot natural light scores
     axes[1, 0].plot(metrics['natural_light_scores'])
     axes[1, 0].set_title('Natural Light Scores')
     axes[1, 0].set_xlabel('Episode')
     
-    # Plot privacy scores
     axes[1, 1].plot(metrics['privacy_scores'])
     axes[1, 1].set_title('Privacy Scores')
     axes[1, 1].set_xlabel('Episode')
     
-    # Plot room counts
     axes[1, 2].plot(metrics['room_counts'])
     axes[1, 2].set_title('Room Counts')
     axes[1, 2].set_xlabel('Episode')
@@ -317,10 +325,11 @@ def plot_training_curves(metrics: dict, save_dir: Path):
     plt.close()
 
 if __name__ == "__main__":
-    # Train the agent with reduced epochs
+    # Train the agent
     trained_agent = train_agent(
-        epochs=1500,  # Reduced from 5000 to 1500
+        epochs=1500,
         batch_size=32,
         curriculum_stages=5,
-        save_dir='models'
+        save_dir='models',
+        grid_size=(12, 12)  # Fixed grid size for training
     )
