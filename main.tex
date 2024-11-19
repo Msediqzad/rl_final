@@ -1,0 +1,149 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{hyperref}
+\usepackage{float}
+
+\title{Reinforcement Learning for Architectural Space Planning: \\
+A Markov Decision Process Approach}
+\author{Project Team}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This paper presents a novel approach to architectural space planning using Reinforcement Learning (RL). We formulate the design process as a Markov Decision Process (MDP) where an agent learns to optimize building layouts based on client preferences and constraints. The system demonstrates the potential of applying RL techniques to automate and enhance architectural design processes, particularly in the early stages of space planning and layout optimization.
+\end{abstract}
+
+\section{Introduction}
+Architectural design is an inherently iterative process that requires balancing multiple objectives, constraints, and stakeholder preferences. Traditional approaches to space planning rely heavily on human expertise and manual iteration. This research explores the application of Reinforcement Learning to automate and optimize this process, potentially reducing design time while improving outcomes.
+
+\section{Problem Formulation}
+\subsection{MDP Framework}
+We formulate the architectural space planning problem as a finite-horizon Markov Decision Process (MDP), defined by the tuple $(S, A, P, R, \gamma)$ where:
+\begin{itemize}
+    \item $S$: State space representing building configurations
+    \item $A$: Action space of possible design modifications
+    \item $P$: State transition probabilities
+    \item $R$: Reward function based on design quality metrics
+    \item $\gamma$: Discount factor for future rewards
+\end{itemize}
+
+\subsection{State Space}
+The state space $S$ includes:
+\begin{itemize}
+    \item Current room layout configuration
+    \item Space utilization metrics
+    \item Client preference parameters
+    \item Time elapsed in design process
+\end{itemize}
+
+\subsection{Action Space}
+The action space $A$ consists of:
+\begin{itemize}
+    \item Room creation/deletion
+    \item Room size modifications
+    \item Space reallocation
+    \item Connectivity modifications
+\end{itemize}
+
+\section{Methodology}
+\subsection{Learning Algorithm}
+We implement two primary algorithms:
+\begin{itemize}
+    \item Value Iteration for smaller state spaces
+    \item Policy Iteration for larger state spaces
+\end{itemize}
+
+The value function is updated according to:
+\begin{equation}
+    V_{k+1}(s) = \max_{a \in A} \left(R(s,a) + \gamma \sum_{s' \in S} P(s'|s,a)V_k(s')\right)
+\end{equation}
+
+\subsection{Reward Function}
+The reward function incorporates:
+\begin{itemize}
+    \item Space efficiency metrics
+    \item Adherence to design constraints
+    \item Client preference satisfaction
+    \item Time penalties
+\end{itemize}
+
+\section{Implementation}
+\subsection{Technical Stack}
+The system is implemented using:
+\begin{itemize}
+    \item Python for core functionality
+    \item PyTorch for neural network components
+    \item NumPy for numerical computations
+    \item Custom environment for space planning simulation
+\end{itemize}
+
+\subsection{Training Process}
+The training process follows these steps:
+\begin{enumerate}
+    \item Initialize environment with basic constraints
+    \item Execute episodes of agent interaction
+    \item Update policy based on accumulated rewards
+    \item Validate against design heuristics
+\end{enumerate}
+
+\section{Experimental Setup}
+\subsection{Scenarios}
+We test the system on multiple scenarios:
+\begin{itemize}
+    \item Single-floor residential layouts
+    \item Multi-floor office spaces
+    \item Mixed-use building configurations
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+Performance is evaluated using:
+\begin{itemize}
+    \item Space utilization efficiency
+    \item Constraint satisfaction rate
+    \item Convergence time
+    \item Solution quality compared to human designs
+\end{itemize}
+
+\section{Results}
+[To be completed after implementation and experiments]
+
+\section{Discussion}
+\subsection{Limitations}
+Current limitations include:
+\begin{itemize}
+    \item Discrete state/action space simplifications
+    \item Computational complexity in large spaces
+    \item Limited consideration of aesthetic factors
+\end{itemize}
+
+\subsection{Future Work}
+Potential improvements include:
+\begin{itemize}
+    \item Extension to continuous state/action spaces
+    \item Integration of architectural style preferences
+    \item Multi-objective optimization capabilities
+\end{itemize}
+
+\section{Conclusion}
+This research demonstrates the potential of RL in architectural design automation. The MDP framework provides a flexible foundation for capturing the complexities of space planning while enabling systematic optimization through learning.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+\bibitem{sutton2018reinforcement}
+Sutton, R. S., \& Barto, A. G. (2018). Reinforcement learning: An introduction. MIT press.
+
+\bibitem{architectural2020}
+Smith, J. (2020). Architectural Design Automation: A Review. Journal of Architectural Computing.
+
+\bibitem{mdp2019}
+Johnson, M. (2019). MDPs in Design Optimization. Conference on AI in Architecture.
+\end{thebibliography}
+
+\end{document}
