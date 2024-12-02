@@ -6,6 +6,8 @@ from enum import Enum
 from typing import Dict, List, Tuple, Set
 import numpy as np
 
+from environment import State
+
 
 class RoomType(Enum):
     """Types of spaces."""
@@ -115,32 +117,28 @@ class ArchitecturalConstraints:
         return used_area / total_area if total_area > 0 else 0.0
 
     @staticmethod
-    def evaluate_adjacency(
-        layout: np.ndarray, 
-        room_info: Dict[int, Dict],
-        requirements: Dict[RoomType, RoomRequirements]
-    ) -> float:
+    def evaluate_adjacency(state: State) -> float:
         """
         Evaluate how well the layout satisfies adjacency requirements.
         """
-        if not room_info:  # Handle empty layout
+        if not state.room_info:  # Handle empty layout
             return 0.0
             
         score = 0.0
         total_requirements = 0
         
         # Check each room's adjacency requirements
-        for room_id, info in room_info.items():
+        for room_id, info in state.room_info.items():
             room = info['name']
-            req = requirements[room]
+            req = state.required_rooms[room]
             
             # Check required adjacencies
             for adj_type in req.adjacent_to:
                 total_requirements += 1
                 # Find if any room of the required type is adjacent
-                for other_id, other_info in room_info.items():
+                for other_id, other_info in state.room_info.items():
                     if other_id != room_id and other_info['type'] == adj_type:
-                        if ArchitecturalConstraints._are_rooms_adjacent(layout, room_id, other_id):
+                        if ArchitecturalConstraints._are_rooms_adjacent(state.layout, room_id, other_id):
                             score += 1
                             break
             
@@ -148,7 +146,7 @@ class ArchitecturalConstraints:
             for dist_type in req.min_distance_from:
                 total_requirements += 1
                 min_distance_met = True
-                for other_id, other_info in room_info.items():
+                for other_id, other_info in state.room_info.items():
                     if other_id != room_id and other_info['type'] == dist_type:
                         if ArchitecturalConstraints._get_room_distance(info, other_info) < 2:
                             min_distance_met = False
@@ -159,59 +157,51 @@ class ArchitecturalConstraints:
         return score / total_requirements if total_requirements > 0 else 0.0
 
     @staticmethod
-    def evaluate_natural_light(
-        layout: np.ndarray,
-        room_info: Dict[int, Dict],
-        requirements: Dict[RoomType, RoomRequirements],
-    ) -> float:
+    def evaluate_natural_light(state: State) -> float:
         """
         Evaluate natural light access for rooms that require it.
         """
-        if not room_info:  # Handle empty layout
+        if not state.room_info:  # Handle empty layout
             return 0.0
             
         score = 0.0
         rooms_needing_light = 0
         
-        for room_id, info in room_info.items():
+        for room_id, info in state.room_info.items():
             room = info['name']
-            req = requirements[room]
+            req = state.required_rooms[room]
             
             if req.needs_natural_light:
                 rooms_needing_light += 1
                 # Check if room has access to exterior wall
-                if ArchitecturalConstraints._has_exterior_access(layout, room_id):
+                if ArchitecturalConstraints._has_exterior_access(state.layout, room_id):
                     score += 1
         
         return score / rooms_needing_light if rooms_needing_light > 0 else 1.0
 
     @staticmethod
-    def evaluate_privacy(
-        layout: np.ndarray,
-        room_info: Dict[int, Dict],
-        requirements: Dict[RoomType, RoomRequirements]
-    ) -> float:
+    def evaluate_privacy(state: State) -> float:
         """
         Evaluate privacy zoning of the layout.
         """
-        if not room_info:  # Handle empty layout
+        if not state.room_info:  # Handle empty layout
             return 0.0
             
-        total_rooms = len(room_info)
+        total_rooms = len(state.room_info)
         if total_rooms < 2:  # Need at least 2 rooms to evaluate privacy
             return 1.0
             
         score = 0.0
         total_pairs = total_rooms * (total_rooms - 1)  # Number of room pairs to evaluate
         
-        for room1_id, info1 in room_info.items():
+        for room1_id, info1 in state.room_info.items():
             room1 = info1['name']
-            req1 = requirements[room1]
+            req1 = state.required_rooms[room1]
             
-            for room2_id, info2 in room_info.items():
+            for room2_id, info2 in state.room_info.items():
                 if room1_id != room2_id:
                     room2 = info2['name']
-                    req2 = requirements[room2]
+                    req2 = state.required_rooms[room2]
                     
                     # Check if privacy levels are compatible with room placement
                     privacy_diff = abs(req1.privacy_level.value - req2.privacy_level.value)
@@ -264,11 +254,7 @@ class ArchitecturalConstraints:
                 np.any(room_mask[:, -1]))    # Right wall
 
     @staticmethod
-    def evaluate_overall(
-        layout: np.ndarray,
-        room_info: Dict[int, Dict],
-        requirements: Dict[RoomType, RoomRequirements],
-    ) -> float:
+    def evaluate_overall(state: State) -> float:
         """
         Calculate overall layout score combining all metrics.
         
@@ -278,10 +264,10 @@ class ArchitecturalConstraints:
         - Natural light: 20%
         - Privacy zoning: 25%
         """
-        space_score = ArchitecturalConstraints.evaluate_space_efficiency(layout)
-        adjacency_score = ArchitecturalConstraints.evaluate_adjacency(layout, room_info, requirements)
-        light_score = ArchitecturalConstraints.evaluate_natural_light(layout, room_info, requirements)
-        privacy_score = ArchitecturalConstraints.evaluate_privacy(layout, room_info, requirements)
+        space_score = ArchitecturalConstraints.evaluate_space_efficiency(state.layout)
+        adjacency_score = ArchitecturalConstraints.evaluate_adjacency(state)
+        light_score = ArchitecturalConstraints.evaluate_natural_light(state)
+        privacy_score = ArchitecturalConstraints.evaluate_privacy(state)
         
         return (0.30 * space_score +
                 0.25 * adjacency_score +
