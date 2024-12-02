@@ -1,35 +1,37 @@
-import numpy as np
-from typing import Tuple, Dict, Any
+from dataclasses import dataclass
+from typing import Tuple, Any, NamedTuple
 import copy
+import numpy as np
 from architectural_principles import (
     ArchitecturalConstraints,
     RoomType,
-    Orientation,
     RoomRequirements
 )
 
+@dataclass
+class State(NamedTuple):
+    layout: np.ndarray
+    room_info: dict[int, dict]
+    current_step: int
+    required_rooms: dict[str, RoomRequirements]
+    placed_rooms: set
+
+
+@dataclass
 class ArchitecturalEnvironment:
     """
     Environment for architectural space planning using RL.
     Implements a custom gym-like interface with architectural constraints.
     """
-    def __init__(self, 
-                 grid_size: Tuple[int, int] = (10, 10),
-                 max_steps: int = 100,
-                 building_orientation: Orientation = Orientation.NORTH,
-                 requirements: Dict[RoomType, RoomRequirements] = None):
-        self.grid_size = grid_size
-        self.max_steps = max_steps
-        self.building_orientation = building_orientation
-        self.requirements = requirements or ArchitecturalConstraints.default_room_requirements()
-        
+    grid_size: Tuple[int, int] = (10, 10),
+    max_steps: int = 100,
+    required_rooms: dict[str, RoomRequirements] = ArchitecturalConstraints.default_room_requirements()
+
+    def __post_init__(self):        
         # Initialize grid representation
-        self.grid = np.zeros(grid_size)
+        self.grid = np.zeros(self.grid_size)
         self.current_step = 0
         self.room_info = {}  # Store room metadata
-        
-        # Track required rooms
-        self.required_rooms = set(self.requirements.keys())
         self.placed_rooms = set()
     
     def reset(self) -> np.ndarray:
@@ -40,7 +42,7 @@ class ArchitecturalEnvironment:
         self.placed_rooms = set()
         return self._get_state()
     
-    def step(self, action: Dict[str, Any]) -> Tuple[np.ndarray, float, bool, Dict]:
+    def step(self, action: dict[str, Any]) -> Tuple[np.ndarray, float, bool, dict]:
         """
         Execute action in environment.
         
@@ -59,7 +61,7 @@ class ArchitecturalEnvironment:
             state: Current state observation
             reward: Reward for current action
             done: Whether episode is finished
-            info: Additional information
+            metrics: Evaluation of design quality
         """
         self.current_step += 1
         
@@ -75,29 +77,24 @@ class ArchitecturalEnvironment:
         
         # Check if episode is done
         done = self._is_done()
-        
+        state = self._get_state()
         # Get additional info
-        info = {
+        metrics = {
             'space_efficiency': ArchitecturalConstraints.evaluate_space_efficiency(self.grid),
-            'adjacency_score': ArchitecturalConstraints.evaluate_adjacency(
-                self.grid, self.room_info, self.requirements
-            ),
-            'natural_light_score': ArchitecturalConstraints.evaluate_natural_light(
-                self.grid, self.room_info, self.requirements, self.building_orientation
-            ),
-            'privacy_score': ArchitecturalConstraints.evaluate_privacy(
-                self.grid, self.room_info, self.requirements
-            )
+            'adjacency_score': ArchitecturalConstraints.evaluate_adjacency(state),
+            'natural_light_score': ArchitecturalConstraints.evaluate_natural_light(state),
+            'privacy_score': ArchitecturalConstraints.evaluate_privacy(state)
         }
         
-        return self._get_state(), reward, done, info
+        return state, reward, done, metrics
     
-    def _get_state(self) -> np.ndarray:
+    def _get_state(self) -> State:
         """Return current state observation."""
-        return self.grid.copy()
+        return State(self.grid.copy(), self.room_info, self.current_step, self.required_rooms)
     
-    def _add_room(self, params: Dict) -> float:
+    def _add_room(self, params: dict) -> float:
         """Add a new room to the layout."""
+        name = params['name']
         room_type = params['room_type']
         x, y = params['position']
         width, height = params['size']
@@ -110,17 +107,18 @@ class ArchitecturalEnvironment:
         room_id = len(self.room_info) + 1
         self.grid[x:x+width, y:y+height] = room_id
         self.room_info[room_id] = {
+            'name': name,
             'type': room_type,
             'position': (x, y),
             'size': (width, height)
         }
         
         # Update placed rooms
-        self.placed_rooms.add(room_type)
+        self.placed_rooms.add(name)
         
         return self._calculate_reward()
     
-    def _modify_room(self, params: Dict) -> float:
+    def _modify_room(self, params: dict) -> float:
         """Modify existing room dimensions."""
         room_id = params['room_id']
         new_width, new_height = params['size']
@@ -143,9 +141,9 @@ class ArchitecturalEnvironment:
         self.grid[x:x+new_width, y:y+new_height] = room_id
         self.room_info[room_id]['size'] = (new_width, new_height)
         
-        return self._calculate_reward()
+        return self._calculate_reward() - 0.5 # penalty for modification
     
-    def _remove_room(self, params: Dict) -> float:
+    def _remove_room(self, params: dict) -> float:
         """Remove existing room."""
         room_id = params['room_id']
         
@@ -161,18 +159,20 @@ class ArchitecturalEnvironment:
         self.placed_rooms.remove(room_type)
         del self.room_info[room_id]
         
-        return self._calculate_reward()
+        return self._calculate_reward() - 0.25 # penalty for demolition
     
-    def _is_valid_room_placement(self, 
-                               room_type: RoomType,
-                               x: int, 
-                               y: int, 
-                               width: int, 
-                               height: int,
-                               exclude_room: int = None) -> bool:
+    def _is_valid_room_placement(
+        self, 
+        room_name: str,
+        x: int, 
+        y: int, 
+        width: int, 
+        height: int,
+        exclude_room: int = None
+    ) -> bool:
         """Check if room placement is valid."""
         # Get room requirements
-        req = self.requirements[room_type]
+        req = self.required_rooms[room_name]
         
         # Check boundaries
         if (x < 0 or y < 0 or 
@@ -207,15 +207,17 @@ class ArchitecturalEnvironment:
         base_reward = ArchitecturalConstraints.evaluate_overall(
             self.grid,
             self.room_info,
-            self.requirements,
-            self.building_orientation
+            self.required_rooms,
         )
         
         # Add bonus for completing required rooms
         completion_bonus = len(self.placed_rooms) / len(self.required_rooms)
+
+        # Penalize time spent
+        time_penalty = self.current_step / self.max_steps
         
         # Combine rewards
-        return base_reward + completion_bonus
+        return base_reward + completion_bonus - time_penalty
     
     def _is_done(self) -> bool:
         """Check if episode should end."""
@@ -234,8 +236,7 @@ class ArchitecturalEnvironment:
         env_copy = ArchitecturalEnvironment(
             grid_size=self.grid_size,
             max_steps=self.max_steps,
-            building_orientation=self.building_orientation,
-            requirements=self.requirements
+            required_rooms=self.required_rooms
         )
         env_copy.grid = self.grid.copy()
         env_copy.current_step = self.current_step
@@ -243,37 +244,10 @@ class ArchitecturalEnvironment:
         env_copy.placed_rooms = self.placed_rooms.copy()
         return env_copy
     
-    def set_state(self, state: np.ndarray):
+    def set_state(self, state: State):
         """Set the environment state."""
-        if not isinstance(state, np.ndarray):
-            raise ValueError("State must be a numpy array")
-            
-        self.grid = state.copy()
-        # Reconstruct room_info from grid
-        self.room_info = {}
-        self.placed_rooms = set()
-        unique_ids = np.unique(self.grid)
-        unique_ids = unique_ids[unique_ids != 0]  # Exclude empty space
-        
-        for room_id in unique_ids:
-            room_mask = (self.grid == room_id)
-            x_coords, y_coords = np.where(room_mask)
-            x, y = np.min(x_coords), np.min(y_coords)
-            width = np.max(x_coords) - x + 1
-            height = np.max(y_coords) - y + 1
-            
-            # Infer room type based on size
-            room_type = None
-            for rt, req in self.requirements.items():
-                if (req.min_size[0] <= width <= req.max_size[0] and
-                    req.min_size[1] <= height <= req.max_size[1]):
-                    room_type = rt
-                    break
-            
-            if room_type:
-                self.room_info[int(room_id)] = {
-                    'type': room_type,
-                    'position': (x, y),
-                    'size': (width, height)
-                }
-                self.placed_rooms.add(room_type)
+        self.grid = state.layout.copy()
+        self.room_info = state.room_info
+        self.current_step = state.current_step
+        self.required_rooms = state.required_rooms
+        self.placed_rooms = state.placed_rooms
