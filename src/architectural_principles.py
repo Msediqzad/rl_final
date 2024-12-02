@@ -6,28 +6,23 @@ from enum import Enum
 from typing import Dict, List, Tuple, Set
 import numpy as np
 
+
 class RoomType(Enum):
-    """Types of rooms with their specific requirements."""
-    LIVING = "living"          # Needs natural light, central location
-    BEDROOM = "bedroom"        # Needs natural light, privacy
-    KITCHEN = "kitchen"        # Needs ventilation, adjacency to dining
-    DINING = "dining"          # Needs natural light, adjacency to kitchen
-    BATHROOM = "bathroom"      # Needs ventilation, privacy
-    ENTRY = "entry"           # Needs central location, accessibility
-    CORRIDOR = "corridor"      # Circulation space
+    """Types of spaces."""
+    LIVING = "living"
+    BEDROOM = "bedroom"
+    KITCHEN = "kitchen"
+    DINING = "dining"
+    BATHROOM = "bathroom"
+    ENTRY = "entry"
+    CORRIDOR = "corridor"
+
 
 class PrivacyLevel(Enum):
     """Privacy levels for different spaces."""
-    PUBLIC = 1    # Entry, Living, Dining
-    SEMI = 2      # Kitchen, Corridor
-    PRIVATE = 3   # Bedroom, Bathroom
-
-class Orientation(Enum):
-    """Possible orientations for natural light."""
-    NORTH = 0
-    EAST = 90
-    SOUTH = 180
-    WEST = 270
+    PUBLIC = 1
+    SEMI = 2
+    PRIVATE = 3
 
 
 @dataclass
@@ -42,14 +37,15 @@ class RoomRequirements:
     adjacent_to: Set[RoomType] = set()
     min_distance_from: Set[RoomType] = set()
 
+
 class ArchitecturalConstraints:
-    """Defines architectural constraints and evaluation metrics."""
+    """Architectural constraints and evaluation metrics."""
     
     @staticmethod
-    def default_room_requirements() -> Dict[RoomType, RoomRequirements]:
-        """Default requirements for each room type."""
+    def default_rooms() -> Dict[str, RoomRequirements]:
+        """Default rooms."""
         return {
-            RoomType.LIVING: RoomRequirements(
+            "living": RoomRequirements(
                 room_type=RoomType.LIVING,
                 min_size=(4, 4),
                 max_size=(6, 6),
@@ -57,7 +53,7 @@ class ArchitecturalConstraints:
                 needs_natural_light=True,
                 adjacent_to={RoomType.DINING, RoomType.ENTRY}
             ),
-            RoomType.BEDROOM: RoomRequirements(
+            "bedroom": RoomRequirements(
                 room_type=RoomType.BEDROOM,
                 min_size=(3, 3),
                 max_size=(4, 4),
@@ -65,7 +61,7 @@ class ArchitecturalConstraints:
                 needs_natural_light=True,
                 min_distance_from={RoomType.ENTRY, RoomType.LIVING}
             ),
-            RoomType.KITCHEN: RoomRequirements(
+            "kitchen": RoomRequirements(
                 room_type=RoomType.KITCHEN,
                 min_size=(3, 3),
                 max_size=(4, 4),
@@ -73,7 +69,7 @@ class ArchitecturalConstraints:
                 needs_ventilation=True,
                 adjacent_to={RoomType.DINING}
             ),
-            RoomType.DINING: RoomRequirements(
+            "dining": RoomRequirements(
                 room_type=RoomType.DINING,
                 min_size=(3, 3),
                 max_size=(4, 5),
@@ -81,7 +77,7 @@ class ArchitecturalConstraints:
                 needs_natural_light=True,
                 adjacent_to={RoomType.KITCHEN, RoomType.LIVING}
             ),
-            RoomType.BATHROOM: RoomRequirements(
+            "bathroom": RoomRequirements(
                 room_type=RoomType.BATHROOM,
                 min_size=(2, 2),
                 max_size=(3, 3),
@@ -89,14 +85,14 @@ class ArchitecturalConstraints:
                 needs_ventilation=True,
                 min_distance_from={RoomType.KITCHEN, RoomType.DINING}
             ),
-            RoomType.ENTRY: RoomRequirements(
+            "entry": RoomRequirements(
                 room_type=RoomType.ENTRY,
                 min_size=(2, 2),
                 max_size=(3, 3),
                 privacy_level=PrivacyLevel.PUBLIC,
                 adjacent_to={RoomType.LIVING}
             ),
-            RoomType.CORRIDOR: RoomRequirements(
+            "corridor": RoomRequirements(
                 room_type=RoomType.CORRIDOR,
                 min_size=(1, 3),
                 max_size=(2, 6),
@@ -119,9 +115,11 @@ class ArchitecturalConstraints:
         return used_area / total_area if total_area > 0 else 0.0
 
     @staticmethod
-    def evaluate_adjacency(layout: np.ndarray, 
-                         room_info: Dict[int, Dict],
-                         requirements: Dict[RoomType, RoomRequirements]) -> float:
+    def evaluate_adjacency(
+        layout: np.ndarray, 
+        room_info: Dict[int, Dict],
+        requirements: Dict[RoomType, RoomRequirements]
+    ) -> float:
         """
         Evaluate how well the layout satisfies adjacency requirements.
         """
@@ -133,8 +131,8 @@ class ArchitecturalConstraints:
         
         # Check each room's adjacency requirements
         for room_id, info in room_info.items():
-            room_type = info['type']
-            req = requirements[room_type]
+            room = info['name']
+            req = requirements[room]
             
             # Check required adjacencies
             for adj_type in req.adjacent_to:
@@ -161,10 +159,11 @@ class ArchitecturalConstraints:
         return score / total_requirements if total_requirements > 0 else 0.0
 
     @staticmethod
-    def evaluate_natural_light(layout: np.ndarray,
-                             room_info: Dict[int, Dict],
-                             requirements: Dict[RoomType, RoomRequirements],
-                             building_orientation: Orientation) -> float:
+    def evaluate_natural_light(
+        layout: np.ndarray,
+        room_info: Dict[int, Dict],
+        requirements: Dict[RoomType, RoomRequirements],
+    ) -> float:
         """
         Evaluate natural light access for rooms that require it.
         """
@@ -175,8 +174,8 @@ class ArchitecturalConstraints:
         rooms_needing_light = 0
         
         for room_id, info in room_info.items():
-            room_type = info['type']
-            req = requirements[room_type]
+            room = info['name']
+            req = requirements[room]
             
             if req.needs_natural_light:
                 rooms_needing_light += 1
@@ -187,9 +186,11 @@ class ArchitecturalConstraints:
         return score / rooms_needing_light if rooms_needing_light > 0 else 1.0
 
     @staticmethod
-    def evaluate_privacy(layout: np.ndarray,
-                        room_info: Dict[int, Dict],
-                        requirements: Dict[RoomType, RoomRequirements]) -> float:
+    def evaluate_privacy(
+        layout: np.ndarray,
+        room_info: Dict[int, Dict],
+        requirements: Dict[RoomType, RoomRequirements]
+    ) -> float:
         """
         Evaluate privacy zoning of the layout.
         """
@@ -204,13 +205,13 @@ class ArchitecturalConstraints:
         total_pairs = total_rooms * (total_rooms - 1)  # Number of room pairs to evaluate
         
         for room1_id, info1 in room_info.items():
-            room1_type = info1['type']
-            req1 = requirements[room1_type]
+            room1 = info1['name']
+            req1 = requirements[room1]
             
             for room2_id, info2 in room_info.items():
                 if room1_id != room2_id:
-                    room2_type = info2['type']
-                    req2 = requirements[room2_type]
+                    room2 = info2['name']
+                    req2 = requirements[room2]
                     
                     # Check if privacy levels are compatible with room placement
                     privacy_diff = abs(req1.privacy_level.value - req2.privacy_level.value)
@@ -263,10 +264,11 @@ class ArchitecturalConstraints:
                 np.any(room_mask[:, -1]))    # Right wall
 
     @staticmethod
-    def evaluate_overall(layout: np.ndarray,
-                        room_info: Dict[int, Dict],
-                        requirements: Dict[RoomType, RoomRequirements],
-                        building_orientation: Orientation) -> float:
+    def evaluate_overall(
+        layout: np.ndarray,
+        room_info: Dict[int, Dict],
+        requirements: Dict[RoomType, RoomRequirements],
+    ) -> float:
         """
         Calculate overall layout score combining all metrics.
         
@@ -278,7 +280,7 @@ class ArchitecturalConstraints:
         """
         space_score = ArchitecturalConstraints.evaluate_space_efficiency(layout)
         adjacency_score = ArchitecturalConstraints.evaluate_adjacency(layout, room_info, requirements)
-        light_score = ArchitecturalConstraints.evaluate_natural_light(layout, room_info, requirements, building_orientation)
+        light_score = ArchitecturalConstraints.evaluate_natural_light(layout, room_info, requirements)
         privacy_score = ArchitecturalConstraints.evaluate_privacy(layout, room_info, requirements)
         
         return (0.30 * space_score +
