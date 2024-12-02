@@ -204,11 +204,7 @@ class ArchitecturalEnvironment:
         3. Penalties for invalid configurations
         """
         # Calculate base reward from architectural principles
-        base_reward = ArchitecturalConstraints.evaluate_overall(
-            self.grid,
-            self.room_info,
-            self.required_rooms,
-        )
+        base_reward = ArchitecturalConstraints.evaluate_overall(State(layout=self.grid, room_info=self.room_info, required_rooms=self.required_rooms))
         
         # Add bonus for completing required rooms
         completion_bonus = len(self.placed_rooms) / len(self.required_rooms)
