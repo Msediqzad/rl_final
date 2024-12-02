@@ -1,7 +1,7 @@
 """
 Architectural principles and constraints for space planning.
 """
-
+from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Tuple, Set
 import numpy as np
@@ -29,26 +29,18 @@ class Orientation(Enum):
     SOUTH = 180
     WEST = 270
 
+
+@dataclass
 class RoomRequirements:
     """Requirements and constraints for a specific room."""
-    
-    def __init__(self, 
-                 room_type: RoomType,
-                 min_size: Tuple[int, int],
-                 max_size: Tuple[int, int],
-                 privacy_level: PrivacyLevel,
-                 needs_natural_light: bool = False,
-                 needs_ventilation: bool = False,
-                 adjacent_to: Set[RoomType] = None,
-                 min_distance_from: Set[RoomType] = None):
-        self.room_type = room_type
-        self.min_size = min_size
-        self.max_size = max_size
-        self.privacy_level = privacy_level
-        self.needs_natural_light = needs_natural_light
-        self.needs_ventilation = needs_ventilation
-        self.adjacent_to = adjacent_to or set()
-        self.min_distance_from = min_distance_from or set()
+    room_type: RoomType
+    min_size: Tuple[int, int]
+    max_size: Tuple[int, int]
+    privacy_level: PrivacyLevel
+    needs_natural_light: bool = False
+    needs_ventilation: bool = False
+    adjacent_to: Set[RoomType] = set()
+    min_distance_from: Set[RoomType] = set()
 
 class ArchitecturalConstraints:
     """Defines architectural constraints and evaluation metrics."""
