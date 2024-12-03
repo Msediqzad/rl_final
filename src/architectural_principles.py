@@ -6,8 +6,6 @@ from enum import Enum
 from typing import Dict, List, Tuple, Set
 import numpy as np
 
-from environment import State
-
 
 class RoomType(Enum):
     """Types of spaces."""
@@ -38,6 +36,15 @@ class RoomRequirements:
     needs_ventilation: bool = False
     adjacent_to: Set[RoomType] = set()
     min_distance_from: Set[RoomType] = set()
+
+
+@dataclass
+class State(NamedTuple):
+    layout: np.ndarray
+    room_info: dict[int, dict]
+    current_step: int
+    required_rooms: dict[str, RoomRequirements]
+    placed_rooms: set
 
 
 class ArchitecturalConstraints:

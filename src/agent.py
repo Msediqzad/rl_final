@@ -4,7 +4,7 @@ from typing import Tuple, Any
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from environment import State
+from architectural_principles import State
 
 @dataclass
 class ValueIterationAgent:

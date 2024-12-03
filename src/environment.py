@@ -4,17 +4,10 @@ import copy
 import numpy as np
 from architectural_principles import (
     ArchitecturalConstraints,
-    RoomType,
-    RoomRequirements
+    RoomRequirements,
+    State
 )
 
-@dataclass
-class State(NamedTuple):
-    layout: np.ndarray
-    room_info: dict[int, dict]
-    current_step: int
-    required_rooms: dict[str, RoomRequirements]
-    placed_rooms: set
 
 
 @dataclass
