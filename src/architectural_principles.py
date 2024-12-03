@@ -3,7 +3,7 @@ Architectural principles and constraints for space planning.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Tuple, Set
+from typing import Dict, NamedTuple, Tuple
 import numpy as np
 
 
