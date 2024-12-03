@@ -204,7 +204,7 @@ class PolicyIterationAgent:
         
         return policy_stable
     
-    def act(self, state) -> Dict:
+    def act(self, state) -> dict:
         """Return best action for given state based on learned policy."""
         state_key = self._get_state_key(state)
         return self.policy.get(state_key, self.action_space[0])
@@ -213,7 +213,7 @@ class PolicyIterationAgent:
         """Convert state array to hashable key."""
         return state.tobytes()
     
-    def _simulate_action(self, env, state: np.ndarray, action: Dict) -> Tuple[np.ndarray, float]:
+    def _simulate_action(self, env, state: np.ndarray, action: dict) -> Tuple[np.ndarray, float]:
         """Simulate action to get next state and reward."""
         env_copy = env.copy()
         env_copy.set_state(state)
@@ -290,7 +290,7 @@ class DeepRLAgent(nn.Module):
         return action.numpy()[0]
     
     def train_step(self, state: np.ndarray, action: np.ndarray, 
-                  reward: float, next_state: np.ndarray, done: bool) -> Dict[str, float]:
+                  reward: float, next_state: np.ndarray, done: bool) -> dict[str, float]:
         """
         Perform a single training step.
         
