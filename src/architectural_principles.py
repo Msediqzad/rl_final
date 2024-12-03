@@ -203,12 +203,10 @@ class ArchitecturalConstraints:
         total_pairs = total_rooms * (total_rooms - 1)  # Number of room pairs to evaluate
         
         for room1, info1 in state.placed_rooms.items():
-            room1_id = info1['id']
             req1 = state.required_rooms[room1]
             
             for room2, info2 in state.placed_rooms.items():
                 if room1 != room2:
-                    room2 = info2['id']
                     req2 = state.required_rooms[room2]
                     
                     # Check if privacy levels are compatible with room placement
