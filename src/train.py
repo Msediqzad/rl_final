@@ -34,7 +34,7 @@ class ExperimentManager:
         
         if 'value_iteration' in self.config['algorithms']:
             agents['value_iteration'] = ValueIterationAgent(
-                state_space_size=self.config['env']['grid_size'],
+                state_space_size=self.env.grid_size,
                 action_space=self._get_action_space(),
                 gamma=self.config['algorithms']['value_iteration']['gamma'],
                 theta=self.config['algorithms']['value_iteration']['theta']
@@ -64,8 +64,6 @@ class ExperimentManager:
     def _get_action_space(self) -> list[dict]:
         """Define the action space for the environment."""
         actions = []
-        
-        # Add room actions
         for room, requirements in self.env.required_rooms.items():
             actions.append({'type': 'remove_room', 'params': {'name': room}})
             for w in range(requirements.min_room_size, requirements.max_room_size + 1):
@@ -272,7 +270,7 @@ def main():
     """Main entry point for training."""
     config = {
         'env': {
-            'grid_size': (10, 10),
+            'grid_size': (50, 50),
             'max_steps': 100,
             'required_rooms': ArchitecturalConstraints.default_rooms()
         },

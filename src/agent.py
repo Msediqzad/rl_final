@@ -108,7 +108,7 @@ class PolicyIterationAgent:
         self.V = {}
         self.policy = {}
     
-    def train(self, env) -> Dict:
+    def train(self, env) -> dict:
         """
         Execute Policy Iteration algorithm.
         
