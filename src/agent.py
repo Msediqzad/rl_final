@@ -15,7 +15,7 @@ class ValueIterationAgent:
     action_space: list[dict]
     gamma: float = 0.95
     theta: float = 1e-6
-    max_iterations: int = 1000
+    max_iterations: int = 10
     
     def __post_init__(self):
         self.V = {}
@@ -51,7 +51,7 @@ class ValueIterationAgent:
                 if next_state_key not in self.V:
                     self.V[next_state_key] = 0.0
                 
-                value = reward + self.V[next_state_key]
+                value = reward + (self.gamma * self.V[next_state_key])
                 
                 if value > max_value:
                     max_value = value
@@ -64,6 +64,7 @@ class ValueIterationAgent:
             if delta < self.theta:
                 break
             iteration += 1
+            print(f"iteration:{iteration}")
         
         return {
             'iterations': iteration,

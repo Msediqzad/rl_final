@@ -271,7 +271,7 @@ def main():
     config = {
         'env': {
             'grid_size': (50, 50),
-            'max_steps': 100,
+            'max_steps': 1,
             'required_rooms': ArchitecturalConstraints.default_rooms()
         },
         'algorithms': {
