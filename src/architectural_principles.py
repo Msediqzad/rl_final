@@ -34,8 +34,8 @@ class RoomRequirements:
     privacy_level: PrivacyLevel
     needs_natural_light: bool = False
     needs_ventilation: bool = False
-    adjacent_to: set[RoomType] = {}
-    min_distance_from: set[RoomType] = {}
+    adjacent_to: set[RoomType] = None
+    min_distance_from: set[RoomType] = None
 
 
 @dataclass
