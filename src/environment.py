@@ -93,7 +93,7 @@ class ArchitecturalEnvironment:
         width, height = params['size']
         
         # Check if room placement is valid
-        if not self._is_valid_room_placement(room_type, x, y, width, height):
+        if not self._is_valid_room_placement(name, x, y, width, height):
             return -1.0
         
         # Add room to grid
@@ -118,10 +118,9 @@ class ArchitecturalEnvironment:
         room_id = self.placed_rooms[name]['id']
         new_width, new_height = params['size']
         x, y = self.placed_rooms[name]['position']
-        room_type = self.placed_rooms[name]['type']
         
         # Check if new dimensions are valid
-        if not self._is_valid_room_placement(room_type, x, y, new_width, new_height, exclude_room=room_id):
+        if not self._is_valid_room_placement(name, x, y, new_width, new_height, exclude_room=room_id):
             return -1.0
             
         # Clear old room
@@ -163,6 +162,7 @@ class ArchitecturalEnvironment:
     ) -> bool:
         """Check if room placement is valid."""
         # Get room requirements
+        print(room_name)
         req = self.required_rooms[room_name]
         
         # Check boundaries
