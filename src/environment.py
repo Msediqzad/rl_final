@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Tuple, Any, NamedTuple
 import copy
 import numpy as np
@@ -18,7 +18,7 @@ class ArchitecturalEnvironment:
     """
     grid_size: Tuple[int, int] = (10, 10),
     max_steps: int = 100,
-    required_rooms: dict[str, RoomRequirements] = ArchitecturalConstraints.default_rooms()
+    required_rooms: dict[str, RoomRequirements] = field(default_factory=ArchitecturalConstraints.default_rooms())
 
     def __post_init__(self):        
         # Initialize grid representation
