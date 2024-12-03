@@ -1,41 +1,38 @@
 import numpy as np
-from typing import Dict, List, Tuple, Any
+from dataclasses import dataclass
+from typing import Tuple, Any
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from environment import State
 
+@dataclass
 class ValueIterationAgent:
     """
     Implementation of Value Iteration algorithm for architectural space planning.
     """
-    def __init__(self, 
-                 state_space_size: Tuple[int, ...],
-                 action_space: List[Dict],
-                 gamma: float = 0.95,
-                 theta: float = 1e-6,
-                 max_iterations: int = 1000):
-        self.state_space_size = state_space_size
-        self.action_space = action_space
-        self.gamma = gamma
-        self.theta = theta
-        self.max_iterations = max_iterations
-        
-        # Initialize value function
+    state_space_size: Tuple[int, ...]
+    action_space: list[dict]
+    gamma: float = 0.95
+    theta: float = 1e-6
+    max_iterations: int = 1000
+    
+    def __post_init__(self):
         self.V = {}
         self.policy = {}
     
-    def train(self, env) -> Dict:
+    def train(self, env) -> dict:
         """
         Execute Value Iteration algorithm.
         
         Returns:
-            Dict containing training statistics
+            dict containing training statistics
         """
         iteration = 0
         while iteration < self.max_iterations:
             delta = 0
             # Get initial state
-            state = env.reset()
+            state, _, _, _ = env.reset()
             state_key = self._get_state_key(state)
             
             if state_key not in self.V:
@@ -54,7 +51,7 @@ class ValueIterationAgent:
                 if next_state_key not in self.V:
                     self.V[next_state_key] = 0.0
                 
-                value = reward + self.gamma * self.V[next_state_key]
+                value = reward + self.V[next_state_key]
                 
                 if value > max_value:
                     max_value = value
@@ -74,16 +71,16 @@ class ValueIterationAgent:
             'converged': delta < self.theta
         }
     
-    def act(self, state) -> Dict:
+    def act(self, state: State) -> dict:
         """Return best action for given state based on learned policy."""
         state_key = self._get_state_key(state)
         return self.policy.get(state_key, self.action_space[0])
     
-    def _get_state_key(self, state: np.ndarray) -> str:
+    def _get_state_key(self, state: State) -> str:
         """Convert state array to hashable key."""
-        return state.tobytes()
+        return np.array(state).tobytes()
     
-    def _simulate_action(self, env, state: np.ndarray, action: Dict) -> Tuple[np.ndarray, float]:
+    def _simulate_action(self, env, state: State, action: dict) -> Tuple[State, float]:
         """Simulate action to get next state and reward."""
         # Create copy of environment to simulate action
         env_copy = env.copy()
@@ -97,7 +94,7 @@ class PolicyIterationAgent:
     """
     def __init__(self,
                  state_space_size: Tuple[int, ...],
-                 action_space: List[Dict],
+                 action_space: list[dict],
                  gamma: float = 0.95,
                  theta: float = 1e-6,
                  max_iterations: int = 1000):

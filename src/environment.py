@@ -49,8 +49,10 @@ class ArchitecturalEnvironment:
         Args:
             action: Dictionary containing action parameters
                    {
+                    
                        'type': 'add_room'/'modify_room'/'remove_room',
                        'params': {
+                           'name': room_name
                            'room_type': RoomType,
                            'position': (x, y),
                            'size': (width, height)
@@ -120,12 +122,15 @@ class ArchitecturalEnvironment:
     
     def _modify_room(self, params: dict) -> float:
         """Modify existing room dimensions."""
-        room_id = params['room_id']
-        new_width, new_height = params['size']
+        room_id = None
+        for id, info in self.room_info.items():
+            if info['name'] == params['name']:
+                room_id = id
         
-        if room_id not in self.room_info:
+        if room_id is None:
             return -1.0
-            
+
+        new_width, new_height = params['size']
         x, y = self.room_info[room_id]['position']
         room_type = self.room_info[room_id]['type']
         
@@ -145,9 +150,12 @@ class ArchitecturalEnvironment:
     
     def _remove_room(self, params: dict) -> float:
         """Remove existing room."""
-        room_id = params['room_id']
+        room_id = None
+        for id, info in self.room_info.items():
+            if info['name'] == params['name']:
+                room_id = id
         
-        if room_id not in self.room_info:
+        if room_id is None:
             return -1.0
             
         x, y = self.room_info[room_id]['position']

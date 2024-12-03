@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from environment import ArchitecturalEnvironment
 from agent import ValueIterationAgent, PolicyIterationAgent, DeepRLAgent
+from architectural_principles import ArchitecturalConstraints
 import torch
 from typing import List, Dict, Any
 import json
@@ -17,8 +18,7 @@ class ExperimentManager:
         self.env = ArchitecturalEnvironment(
             grid_size=config['env']['grid_size'],
             max_steps=config['env']['max_steps'],
-            min_room_size=config['env']['min_room_size'],
-            max_room_size=config['env']['max_room_size']
+            required_rooms=config['env']['required_rooms']
         )
         
         # Initialize agents based on config
@@ -61,22 +61,29 @@ class ExperimentManager:
             
         return agents
     
-    def _get_action_space(self) -> List[Dict]:
+    def _get_action_space(self) -> list[dict]:
         """Define the action space for the environment."""
         actions = []
         
         # Add room actions
-        for w in range(self.env.min_room_size, self.env.max_room_size + 1):
-            for h in range(self.env.min_room_size, self.env.max_room_size + 1):
-                for x in range(self.env.grid_size[0] - w + 1):
-                    for y in range(self.env.grid_size[1] - h + 1):
-                        actions.append({
-                            'type': 'add_room',
-                            'params': {
-                                'position': (x, y),
-                                'size': (w, h)
-                            }
-                        })
+        for room, requirements in self.env.required_rooms.items():
+            actions.append({'type': 'remove_room', 'params': {'name': room}})
+            for w in range(requirements.min_room_size, requirements.max_room_size + 1):
+                for h in range(requirements.min_room_size, requirements.max_room_size + 1):
+                    actions.append({'type': 'modify_room', 'params': {'size': (w, h)}})
+                    for x in range(self.env.grid_size[0] - w + 1):
+                        for y in range(self.env.grid_size[1] - h + 1):
+                            actions.append(
+                                {
+                                    'type': 'add_room',
+                                    'params': {
+                                        'name': room,
+                                        'room_type': requirements.room_type,
+                                        'position': (x, y),
+                                        'size': (w, h)
+                                    }
+                                }
+                            )
         
         return actions
     
@@ -267,23 +274,22 @@ def main():
         'env': {
             'grid_size': (10, 10),
             'max_steps': 100,
-            'min_room_size': 2,
-            'max_room_size': 5
+            'required_rooms': ArchitecturalConstraints.default_rooms()
         },
         'algorithms': {
             'value_iteration': {
                 'gamma': 0.95,
                 'theta': 1e-6
             },
-            'policy_iteration': {
-                'gamma': 0.95,
-                'theta': 1e-6
-            },
-            'deep_rl': {
-                'hidden_dim': 256,
-                'episodes': 1000,
-                'max_steps': 100
-            }
+            # 'policy_iteration': {
+            #     'gamma': 0.95,
+            #     'theta': 1e-6
+            # },
+            # 'deep_rl': {
+            #     'hidden_dim': 256,
+            #     'episodes': 1000,
+            #     'max_steps': 100
+            # }
         }
     }
     
