@@ -41,10 +41,9 @@ class RoomRequirements:
 @dataclass
 class State(NamedTuple):
     layout: np.ndarray
-    room_info: dict[int, dict]
+    placed_rooms: dict[int, dict]
     current_step: int
     required_rooms: dict[str, RoomRequirements]
-    placed_rooms: set
 
 
 class ArchitecturalConstraints:
@@ -128,22 +127,22 @@ class ArchitecturalConstraints:
         """
         Evaluate how well the layout satisfies adjacency requirements.
         """
-        if not state.room_info:  # Handle empty layout
+        if not state.placed_rooms:  # Handle empty layout
             return 0.0
             
         score = 0.0
         total_requirements = 0
         
         # Check each room's adjacency requirements
-        for room_id, info in state.room_info.items():
-            room = info['name']
+        for room, info in state.placed_rooms.items():
+            room_id = info['id']
             req = state.required_rooms[room]
             
             # Check required adjacencies
             for adj_type in req.adjacent_to:
                 total_requirements += 1
                 # Find if any room of the required type is adjacent
-                for other_id, other_info in state.room_info.items():
+                for other_id, other_info in state.placed_rooms.items():
                     if other_id != room_id and other_info['type'] == adj_type:
                         if ArchitecturalConstraints._are_rooms_adjacent(state.layout, room_id, other_id):
                             score += 1
@@ -153,7 +152,7 @@ class ArchitecturalConstraints:
             for dist_type in req.min_distance_from:
                 total_requirements += 1
                 min_distance_met = True
-                for other_id, other_info in state.room_info.items():
+                for other_id, other_info in state.placed_rooms.items():
                     if other_id != room_id and other_info['type'] == dist_type:
                         if ArchitecturalConstraints._get_room_distance(info, other_info) < 2:
                             min_distance_met = False
@@ -168,14 +167,14 @@ class ArchitecturalConstraints:
         """
         Evaluate natural light access for rooms that require it.
         """
-        if not state.room_info:  # Handle empty layout
+        if not state.placed_rooms:  # Handle empty layout
             return 0.0
             
         score = 0.0
         rooms_needing_light = 0
         
-        for room_id, info in state.room_info.items():
-            room = info['name']
+        for room, info in state.placed_rooms.items():
+            room_id = info['id']
             req = state.required_rooms[room]
             
             if req.needs_natural_light:
@@ -191,23 +190,23 @@ class ArchitecturalConstraints:
         """
         Evaluate privacy zoning of the layout.
         """
-        if not state.room_info:  # Handle empty layout
+        if not state.placed_rooms:  # Handle empty layout
             return 0.0
             
-        total_rooms = len(state.room_info)
+        total_rooms = len(state.placed_rooms)
         if total_rooms < 2:  # Need at least 2 rooms to evaluate privacy
             return 1.0
             
         score = 0.0
         total_pairs = total_rooms * (total_rooms - 1)  # Number of room pairs to evaluate
         
-        for room1_id, info1 in state.room_info.items():
-            room1 = info1['name']
+        for room1, info1 in state.placed_rooms.items():
+            room1_id = info1['id']
             req1 = state.required_rooms[room1]
             
-            for room2_id, info2 in state.room_info.items():
-                if room1_id != room2_id:
-                    room2 = info2['name']
+            for room2, info2 in state.placed_rooms.items():
+                if room1 != room2:
+                    room2 = info2['id']
                     req2 = state.required_rooms[room2]
                     
                     # Check if privacy levels are compatible with room placement

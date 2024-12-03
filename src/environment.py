@@ -24,15 +24,13 @@ class ArchitecturalEnvironment:
         # Initialize grid representation
         self.grid = np.zeros(self.grid_size)
         self.current_step = 0
-        self.room_info = None  # Store room metadata
-        self.placed_rooms = set()
+        self.placed_rooms = None  # Store room metadata
     
     def reset(self) -> np.ndarray:
         """Reset environment to initial state."""
         self.grid = np.zeros(self.grid_size)
         self.current_step = 0
-        self.room_info = None
-        self.placed_rooms = set()
+        self.placed_rooms = None
         return self._get_state()
     
     def step(self, action: dict[str, Any]) -> Tuple[np.ndarray, float, bool, dict]:
@@ -85,7 +83,7 @@ class ArchitecturalEnvironment:
     
     def _get_state(self) -> State:
         """Return current state observation."""
-        return State(self.grid.copy(), self.room_info, self.current_step, self.required_rooms, self.placed_rooms)
+        return State(self.grid.copy(), self.placed_rooms, self.current_step, self.required_rooms)
     
     def _add_room(self, params: dict) -> float:
         """Add a new room to the layout."""
@@ -99,66 +97,58 @@ class ArchitecturalEnvironment:
             return -1.0
         
         # Add room to grid
-        room_id = len(self.room_info) + 1
+        room_id = len(self.placed_rooms) + 1
         self.grid[x:x+width, y:y+height] = room_id
-        self.room_info[room_id] = {
-            'name': name,
+        self.placed_rooms[name] = {
+            'id': room_id,
             'type': room_type,
             'position': (x, y),
             'size': (width, height)
         }
         
-        # Update placed rooms
-        self.placed_rooms.add(name)
-        
         return self._calculate_reward()
     
     def _modify_room(self, params: dict) -> float:
         """Modify existing room dimensions."""
-        room_id = None
-        for id, info in self.room_info.items():
-            if info['name'] == params['name']:
-                room_id = id
-        
-        if room_id is None:
-            return -1.0
+        name = params['name']
 
+        if name not in self.placed_rooms.keys():
+            return -1.0
+        
+        room_id = self.placed_rooms[name]['id']
         new_width, new_height = params['size']
-        x, y = self.room_info[room_id]['position']
-        room_type = self.room_info[room_id]['type']
+        x, y = self.placed_rooms[name]['position']
+        room_type = self.placed_rooms[name]['type']
         
         # Check if new dimensions are valid
         if not self._is_valid_room_placement(room_type, x, y, new_width, new_height, exclude_room=room_id):
             return -1.0
             
         # Clear old room
-        old_width, old_height = self.room_info[room_id]['size']
+        old_width, old_height = self.placed_rooms[name]['size']
         self.grid[x:x+old_width, y:y+old_height] = 0
         
         # Add modified room
         self.grid[x:x+new_width, y:y+new_height] = room_id
-        self.room_info[room_id]['size'] = (new_width, new_height)
+        self.placed_rooms[room_id]['size'] = (new_width, new_height)
         
         return self._calculate_reward() - 0.5 # penalty for modification
     
     def _remove_room(self, params: dict) -> float:
         """Remove existing room."""
-        room_id = None
-        for id, info in self.room_info.items():
-            if info['name'] == params['name']:
-                room_id = id
-        
-        if room_id is None:
+        name = params['name']
+
+        if name not in self.placed_rooms.keys():
             return -1.0
             
-        x, y = self.room_info[room_id]['position']
-        width, height = self.room_info[room_id]['size']
-        room_type = self.room_info[room_id]['type']
+        room_id = self.placed_rooms[name]['id']
+        x, y = self.placed_rooms[room_id]['position']
+        width, height = self.placed_rooms[room_id]['size']
+        room_type = self.placed_rooms[room_id]['type']
         
         # Clear room from grid
         self.grid[x:x+width, y:y+height] = 0
-        self.placed_rooms.remove(room_type)
-        del self.room_info[room_id]
+        del self.placed_rooms[room_id]
         
         return self._calculate_reward() - 0.25 # penalty for demolition
     
@@ -205,7 +195,7 @@ class ArchitecturalEnvironment:
         3. Penalties for invalid configurations
         """
         # Calculate base reward from architectural principles
-        base_reward = ArchitecturalConstraints.evaluate_overall(State(layout=self.grid, room_info=self.room_info, required_rooms=self.required_rooms))
+        base_reward = ArchitecturalConstraints.evaluate_overall(State(layout=self.grid, placed_rooms=self.placed_rooms, required_rooms=self.required_rooms))
         
         # Add bonus for completing required rooms
         completion_bonus = len(self.placed_rooms) / len(self.required_rooms)
@@ -237,14 +227,14 @@ class ArchitecturalEnvironment:
         )
         env_copy.grid = self.grid.copy()
         env_copy.current_step = self.current_step
-        env_copy.room_info = copy.deepcopy(self.room_info)
+        env_copy.placed_rooms = copy.deepcopy(self.placed_rooms)
         env_copy.placed_rooms = self.placed_rooms.copy()
         return env_copy
     
     def set_state(self, state: State):
         """Set the environment state."""
         self.grid = state.layout.copy()
-        self.room_info = state.room_info
+        self.placed_rooms = state.placed_rooms
         self.current_step = state.current_step
         self.required_rooms = state.required_rooms
         self.placed_rooms = state.placed_rooms
