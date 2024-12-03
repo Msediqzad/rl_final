@@ -18,7 +18,7 @@ class ArchitecturalEnvironment:
     """
     grid_size: Tuple[int, int] = (10, 10),
     max_steps: int = 100,
-    required_rooms: dict[str, RoomRequirements] = ArchitecturalConstraints.default_room_requirements()
+    required_rooms: dict[str, RoomRequirements] = ArchitecturalConstraints.default_rooms()
 
     def __post_init__(self):        
         # Initialize grid representation
