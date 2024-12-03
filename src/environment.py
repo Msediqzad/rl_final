@@ -85,7 +85,7 @@ class ArchitecturalEnvironment:
     
     def _get_state(self) -> State:
         """Return current state observation."""
-        return State(self.grid.copy(), self.room_info, self.current_step, self.required_rooms)
+        return State(self.grid.copy(), self.room_info, self.current_step, self.required_rooms, self.placed_rooms)
     
     def _add_room(self, params: dict) -> float:
         """Add a new room to the layout."""
