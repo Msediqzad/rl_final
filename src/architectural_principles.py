@@ -149,16 +149,17 @@ class ArchitecturalConstraints:
                             break
             
             # Check minimum distance requirements
-            for dist_type in req.min_distance_from:
-                total_requirements += 1
-                min_distance_met = True
-                for other_id, other_info in state.placed_rooms.items():
-                    if other_id != room_id and other_info['type'] == dist_type:
-                        if ArchitecturalConstraints._get_room_distance(info, other_info) < 2:
-                            min_distance_met = False
-                            break
-                if min_distance_met:
-                    score += 1
+            if req.min_distance_from not None:
+                for dist_type in req.min_distance_from:
+                    total_requirements += 1
+                    min_distance_met = True
+                    for other_id, other_info in state.placed_rooms.items():
+                        if other_id != room_id and other_info['type'] == dist_type:
+                            if ArchitecturalConstraints._get_room_distance(info, other_info) < 2:
+                                min_distance_met = False
+                                break
+                    if min_distance_met:
+                        score += 1
         
         return score / total_requirements if total_requirements > 0 else 0.0
 
