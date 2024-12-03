@@ -149,7 +149,7 @@ class ArchitecturalConstraints:
                             break
             
             # Check minimum distance requirements
-            if req.min_distance_from not None:
+            if req.min_distance_from is not None:
                 for dist_type in req.min_distance_from:
                     total_requirements += 1
                     min_distance_met = True

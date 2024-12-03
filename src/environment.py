@@ -162,7 +162,6 @@ class ArchitecturalEnvironment:
     ) -> bool:
         """Check if room placement is valid."""
         # Get room requirements
-        print(room_name)
         req = self.required_rooms[room_name]
         
         # Check boundaries
