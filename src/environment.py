@@ -24,13 +24,13 @@ class ArchitecturalEnvironment:
         # Initialize grid representation
         self.grid = np.zeros(self.grid_size)
         self.current_step = 0
-        self.placed_rooms = None  # Store room metadata
+        self.placed_rooms = {}  # Store room metadata
     
     def reset(self) -> np.ndarray:
         """Reset environment to initial state."""
         self.grid = np.zeros(self.grid_size)
         self.current_step = 0
-        self.placed_rooms = None
+        self.placed_rooms = {}
         return self._get_state()
     
     def step(self, action: dict[str, Any]) -> Tuple[np.ndarray, float, bool, dict]:

@@ -3,7 +3,7 @@ Architectural principles and constraints for space planning.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, NamedTuple, Tuple
+from typing import Dict, Tuple
 import numpy as np
 
 
@@ -39,9 +39,9 @@ class RoomRequirements:
 
 
 @dataclass
-class State(NamedTuple):
+class State:
     layout: np.ndarray
-    placed_rooms: dict[int, dict]
+    placed_rooms: dict[str, dict]
     current_step: int
     required_rooms: dict[str, RoomRequirements]
 
