@@ -139,14 +139,15 @@ class ArchitecturalConstraints:
             req = state.required_rooms[room]
             
             # Check required adjacencies
-            for adj_type in req.adjacent_to:
-                total_requirements += 1
-                # Find if any room of the required type is adjacent
-                for other_id, other_info in state.placed_rooms.items():
-                    if other_id != room_id and other_info['type'] == adj_type:
-                        if ArchitecturalConstraints._are_rooms_adjacent(state.layout, room_id, other_id):
-                            score += 1
-                            break
+            if req.min_distance_from is not None:
+                for adj_type in req.adjacent_to:
+                    total_requirements += 1
+                    # Find if any room of the required type is adjacent
+                    for other_id, other_info in state.placed_rooms.items():
+                        if other_id != room_id and other_info['type'] == adj_type:
+                            if ArchitecturalConstraints._are_rooms_adjacent(state.layout, room_id, other_id):
+                                score += 1
+                                break
             
             # Check minimum distance requirements
             if req.min_distance_from is not None:
