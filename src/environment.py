@@ -22,13 +22,13 @@ class ArchitecturalEnvironment:
 
     def __post_init__(self):        
         # Initialize grid representation
-        self.grid = np.zeros(self.grid_size)
+        self.grid = np.zeros(self.grid_size).astype(int)
         self.current_step = 0
         self.placed_rooms = {}  # Store room metadata
     
     def reset(self) -> np.ndarray:
         """Reset environment to initial state."""
-        self.grid = np.zeros(self.grid_size)
+        self.grid = np.zeros(self.grid_size).astype(int)
         self.current_step = 0
         self.placed_rooms = {}
         return self._get_state()
