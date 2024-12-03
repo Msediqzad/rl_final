@@ -66,8 +66,8 @@ class ExperimentManager:
         actions = []
         for room, requirements in self.env.required_rooms.items():
             actions.append({'type': 'remove_room', 'params': {'name': room}})
-            for w in range(requirements.min_size, requirements.max_size + 1):
-                for h in range(requirements.min_size, requirements.max_size + 1):
+            for w in range(requirements.min_size[0], requirements.max_size[0] + 1):
+                for h in range(requirements.min_size[1], requirements.max_size[1] + 1):
                     actions.append({'type': 'modify_room', 'params': {'size': (w, h)}})
                     for x in range(self.env.grid_size[0] - w + 1):
                         for y in range(self.env.grid_size[1] - h + 1):
