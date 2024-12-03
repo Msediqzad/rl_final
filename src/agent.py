@@ -32,7 +32,7 @@ class ValueIterationAgent:
         while iteration < self.max_iterations:
             delta = 0
             # Get initial state
-            state, _, _, _ = env.reset()
+            state = env.reset()
             state_key = self._get_state_key(state)
             
             if state_key not in self.V:
