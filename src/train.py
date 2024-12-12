@@ -1,14 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from environment import ArchitecturalEnvironment
-from agent import ValueIterationAgent, PolicyIterationAgent, DeepRLAgent
+from agent import ValueIterationAgent, PolicyIterationAgent#, DeepRLAgent
 from architectural_principles import ArchitecturalConstraints
 # import torch
 from typing import List, Dict, Any
 import json
 from pathlib import Path
 import time
-from tqdm import tqdm
+# from tqdm import tqdm
 
 class ExperimentManager:
     """Manages training experiments and result tracking."""
@@ -48,16 +48,16 @@ class ExperimentManager:
                 theta=self.config['algorithms']['policy_iteration']['theta']
             )
             
-        if 'deep_rl' in self.config['algorithms']:
-            # For DeepRL, we need to determine the action dimension
-            action_space = self._get_action_space()
-            action_dim = len(action_space)  # Number of possible actions
+        # if 'deep_rl' in self.config['algorithms']:
+        #     # For DeepRL, we need to determine the action dimension
+        #     action_space = self._get_action_space()
+        #     action_dim = len(action_space)  # Number of possible actions
             
-            agents['deep_rl'] = DeepRLAgent(
-                state_dim=self.config['env']['grid_size'],  # Pass grid dimensions directly
-                action_dim=action_dim,
-                hidden_dim=self.config['algorithms']['deep_rl']['hidden_dim']
-            )
+        #     agents['deep_rl'] = DeepRLAgent(
+        #         state_dim=self.config['env']['grid_size'],  # Pass grid dimensions directly
+        #         action_dim=action_dim,
+        #         hidden_dim=self.config['algorithms']['deep_rl']['hidden_dim']
+        #     )
             
         return agents
     
@@ -115,58 +115,58 @@ class ExperimentManager:
         """Train Value Iteration or Policy Iteration agent."""
         return agent.train(self.env)
     
-    def _train_deep_rl_agent(self, agent) -> Dict:
-        """Train Deep RL agent."""
-        config = self.config['algorithms']['deep_rl']
-        episodes = config['episodes']
-        max_steps = config['max_steps']
+    # def _train_deep_rl_agent(self, agent) -> Dict:
+    #     """Train Deep RL agent."""
+    #     config = self.config['algorithms']['deep_rl']
+    #     episodes = config['episodes']
+    #     max_steps = config['max_steps']
         
-        rewards_history = []
-        losses_history = []
+    #     rewards_history = []
+    #     losses_history = []
         
-        for episode in tqdm(range(episodes), desc="Training episodes"):
-            state = self.env.reset()
-            episode_reward = 0
-            episode_losses = []
+    #     for episode in tqdm(range(episodes), desc="Training episodes"):
+    #         state = self.env.reset()
+    #         episode_reward = 0
+    #         episode_losses = []
             
-            for step in range(max_steps):
-                # Select action
-                action = agent.act(state)
+    #         for step in range(max_steps):
+    #             # Select action
+    #             action = agent.act(state)
                 
-                # Convert continuous action to discrete action space index
-                action_idx = int((action[0] + 1) * len(self._get_action_space()) / 2)
-                action_idx = max(0, min(action_idx, len(self._get_action_space()) - 1))
-                discrete_action = self._get_action_space()[action_idx]
+    #             # Convert continuous action to discrete action space index
+    #             action_idx = int((action[0] + 1) * len(self._get_action_space()) / 2)
+    #             action_idx = max(0, min(action_idx, len(self._get_action_space()) - 1))
+    #             discrete_action = self._get_action_space()[action_idx]
                 
-                # Execute action
-                next_state, reward, done, _ = self.env.step(discrete_action)
+    #             # Execute action
+    #             next_state, reward, done, _ = self.env.step(discrete_action)
                 
-                # Train agent
-                losses = agent.train_step(state, action, reward, next_state, done)
-                episode_losses.append(losses)
-                episode_reward += reward
+    #             # Train agent
+    #             losses = agent.train_step(state, action, reward, next_state, done)
+    #             episode_losses.append(losses)
+    #             episode_reward += reward
                 
-                if done:
-                    break
+    #             if done:
+    #                 break
                     
-                state = next_state
+    #             state = next_state
             
-            rewards_history.append(episode_reward)
-            losses_history.append({
-                k: np.mean([loss[k] for loss in episode_losses])
-                for k in episode_losses[0].keys()
-            })
+    #         rewards_history.append(episode_reward)
+    #         losses_history.append({
+    #             k: np.mean([loss[k] for loss in episode_losses])
+    #             for k in episode_losses[0].keys()
+    #         })
             
-            if episode % 10 == 0:
-                mean_reward = np.mean(rewards_history[-10:])
-                print(f"Episode {episode}/{episodes}, "
-                      f"Average Reward: {mean_reward:.2f}")
+    #         if episode % 10 == 0:
+    #             mean_reward = np.mean(rewards_history[-10:])
+    #             print(f"Episode {episode}/{episodes}, "
+    #                   f"Average Reward: {mean_reward:.2f}")
         
-        return {
-            'rewards_history': rewards_history,
-            'losses_history': losses_history,
-            'final_average_reward': np.mean(rewards_history[-100:])
-        }
+    #     return {
+    #         'rewards_history': rewards_history,
+    #         'losses_history': losses_history,
+    #         'final_average_reward': np.mean(rewards_history[-100:])
+    #     }
     
     def _evaluate_agent(self, agent, num_episodes: int = 10) -> Dict:
         """Evaluate trained agent's performance."""
@@ -178,15 +178,15 @@ class ExperimentManager:
             done = False
             
             while not done:
-                if isinstance(agent, DeepRLAgent):
-                    # Handle continuous actions for DeepRL
-                    action = agent.act(state)
-                    action_idx = int((action[0] + 1) * len(self._get_action_space()) / 2)
-                    action_idx = max(0, min(action_idx, len(self._get_action_space()) - 1))
-                    discrete_action = self._get_action_space()[action_idx]
-                else:
+                # if isinstance(agent, DeepRLAgent):
+                #     # Handle continuous actions for DeepRL
+                #     action = agent.act(state)
+                #     action_idx = int((action[0] + 1) * len(self._get_action_space()) / 2)
+                #     action_idx = max(0, min(action_idx, len(self._get_action_space()) - 1))
+                #     discrete_action = self._get_action_space()[action_idx]
+                # else:
                     # Handle discrete actions for planning agents
-                    discrete_action = agent.act(state)
+                discrete_action = agent.act(state)
                 
                 state, reward, done, _ = self.env.step(discrete_action)
                 episode_reward += reward
