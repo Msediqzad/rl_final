@@ -100,6 +100,7 @@ class ExperimentManager:
                 training_stats = self._train_deep_rl_agent(agent)
             
             training_time = time.time() - start_time
+            print(agent.action_space)
             results[agent_name] = {
                 'training_stats': training_stats,
                 'training_time': training_time,

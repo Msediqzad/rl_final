@@ -53,14 +53,14 @@ class ArchitecturalConstraints:
     def default_rooms() -> Dict[str, RoomRequirements]:
         """Default rooms."""
         return {
-            # "living": RoomRequirements(
-            #     room_type=RoomType.LIVING,
-            #     min_size=(4, 4),
-            #     max_size=(6, 6),
-            #     privacy_level=PrivacyLevel.PUBLIC,
-            #     needs_natural_light=True,
-            #     adjacent_to={RoomType.DINING, RoomType.ENTRY}
-            # ),
+            "living": RoomRequirements(
+                room_type=RoomType.LIVING,
+                min_size=(4, 4),
+                max_size=(6, 6),
+                privacy_level=PrivacyLevel.PUBLIC,
+                needs_natural_light=True,
+                adjacent_to={RoomType.DINING, RoomType.ENTRY}
+            ),
             # "bedroom": RoomRequirements(
             #     room_type=RoomType.BEDROOM,
             #     min_size=(3, 3),

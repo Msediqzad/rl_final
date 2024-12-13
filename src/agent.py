@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import copy
+import random
 from dataclasses import dataclass
 from typing import Tuple, Any
 # import torch
@@ -77,7 +78,7 @@ class ValueIterationAgent:
         delta = 0
         sampled_states = sample_initial_states(env)
         for state in sampled_states:
-            self.policy[state_to_key(state)] = ({'type': 'any'}, 0.0)
+            self.policy[state_to_key(state)] = (random.choice(self.action_space), 0.0)
         
         iteration = 0
         while iteration < self.max_iterations:
@@ -87,23 +88,23 @@ class ValueIterationAgent:
 
             for state in sampled_states:
                 max_next_value = 0
-                next_action = {'type': 'any'}
+                next_action = random.choice(self.action_space)
                 for action in self.action_space:
                     next_state, reward  = self._simulate_action(env, state, action)
                     key = state_to_key(next_state)
-                    _, value = self.policy.get(key, ({'type': 'any'}, 0.0))
+                    _, value = self.policy.get(key, (None, 0.0))
                     V_t = reward + self.gamma * value
                     max_next_value = max(max_next_value, V_t)
                     if max_next_value == V_t:
                         next_action = action
                 
-                new_policy[state_to_key(state)] = (next_action, max_next_value)
+                    new_policy[state_to_key(state)] = (next_action, max_next_value)
             self.policy = new_policy
             sampled_states.extend(expanded_states)
             sampled_states = list({state_to_key(s): s for s in sampled_states}.values())
 
-            if delta < self.epsilon:
-                break
+            # if delta < self.epsilon:
+            #     break
             iteration += 1
         out = {
             'iterations': iteration,
@@ -115,7 +116,9 @@ class ValueIterationAgent:
 
     def act(self, state: State) -> dict:
         """Return best action for given state based on learned policy."""
-        action, _ = self.policy.get(state_to_key(state), ({'type': 'any'}, 0.0))
+        if not self.action_space:
+            raise ValueError("Action space is empty!")
+        action, _ = self.policy.get(state_to_key(state), (random.choice(self.action_space), 0.0))
         return action
     
 
