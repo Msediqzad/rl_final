@@ -129,7 +129,7 @@ class ArchitecturalEnvironment:
         
         # Add modified room
         self.grid[x:x+new_width, y:y+new_height] = room_id
-        self.placed_rooms[room_id]['size'] = (new_width, new_height)
+        self.placed_rooms[name]['size'] = (new_width, new_height)
         
         return self._calculate_reward() - 0.5 # penalty for modification
     
@@ -141,13 +141,13 @@ class ArchitecturalEnvironment:
             return -1.0
             
         room_id = self.placed_rooms[name]['id']
-        x, y = self.placed_rooms[room_id]['position']
-        width, height = self.placed_rooms[room_id]['size']
-        room_type = self.placed_rooms[room_id]['type']
+        x, y = self.placed_rooms[name]['position']
+        width, height = self.placed_rooms[name]['size']
+        room_type = self.placed_rooms[name]['type']
         
         # Clear room from grid
         self.grid[x:x+width, y:y+height] = 0
-        del self.placed_rooms[room_id]
+        del self.placed_rooms[name]
         
         return self._calculate_reward() - 0.25 # penalty for demolition
     
