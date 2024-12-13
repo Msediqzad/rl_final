@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from dataclasses import dataclass
 from typing import Tuple, Any
 # import torch
@@ -11,15 +12,58 @@ class ValueIterationAgent:
     """
     Implementation of Value Iteration algorithm for architectural space planning.
     """
-    state_space_size: Tuple[int, ...]
     action_space: list[dict]
-    gamma: float = 0.95
-    theta: float = 1e-6
-    max_iterations: int = 50
+    gamma: float = 0.2
+    epsilon: float = 1e-6
+    max_iterations: int = 5
+    max_states: int = 100
     
     def __post_init__(self):
         self.V = {}
-        self.policy = {}
+        self.policy = pd.DataFrame()
+    
+
+    def state_to_key(state) -> str:
+        """Convert state to a hashable key."""
+        return str(state.layout) + str(state.placed_rooms) + str(state.current_step)
+
+
+    def sample_initial_states(env):
+        """Generate initial random states."""
+        states = []
+        env.reset()
+        for room_name in env.required_rooms.keys():
+            action = {
+                "type": "add_room",
+                "params": {
+                    "name": room_name,
+                    "room_type": env.required_rooms[room_name].room_type,
+                    "position": (
+                        np.random.randint(0, env.grid_size[0] - 1),
+                        np.random.randint(0, env.grid_size[1] - 1)
+                    ),
+                    "size": env.required_rooms[room_name].min_size,
+                },
+            }
+            env.step(action)
+            states.append(env._get_state())
+        return states
+
+
+    def expand_states(self, env, sampled_states: list[State], actions: list[dict]):
+        # Expand states using valid actions
+        expanded_states = []
+        for state in sampled_states:
+            env.set_state(state)
+            for action in actions:
+                next_state, reward, _, _ = env.step(action)
+                # Add new state if it wasn't visited before
+                key = self.state_to_key(next_state)
+                if key not in self.state_value_map and len(self.state_value_map) < self.max_states:
+                    self.state_value_map[key] = (action, 0.0)
+                    expanded_states.append(next_state)
+        return expanded_states
+
     
     def train(self, env) -> dict:
         """
@@ -28,59 +72,53 @@ class ValueIterationAgent:
         Returns:
             dict containing training statistics
         """
+        delta = 0
+        sampled_states = self.sample_initial_states()
+        for state in sampled_states:
+            self.policy[self.state_to_key(state)] = ('any', 0.0)
+        
         iteration = 0
         while iteration < self.max_iterations:
-            delta = 0
-            # Get initial state
-            state = env.reset()
-            state_key = self._get_state_key(state)
-            
-            if state_key not in self.V:
-                self.V[state_key] = 0.0
-            
-            v = self.V[state_key]
-            # Find maximum value over all actions
-            max_value = float('-inf')
-            best_action = None
-            
-            for action in self.action_space:
-                # Simulate action to get next state and reward
-                next_state, reward = self._simulate_action(env, state, action)
-                next_state_key = self._get_state_key(next_state)
+            print(f"Iteration: {iteration}")
+            new_policy = self.policy.copy(deep=True)
+            expanded_states = self.expand_states(sampled_states, self.action_space)
+
+            for state in sampled_states:
+                max_next_value = 0
+                next_action = 'any'
+                for action in self.action_space:
+                    next_state, reward  = self._simulate_action(env, state, action)
+                    key = self.state_to_key(next_state)
+                    _, value = self.policy.get(key, ('any', 0.0))
+                    V_t = reward + self.gamma * value
+                    max_next_value = max(max_next_value, V_t)
+                    if max_next_value == V_t:
+                        next_action = action
                 
-                if next_state_key not in self.V:
-                    self.V[next_state_key] = 0.0
-                
-                value = reward + (self.gamma * self.V[next_state_key])
-                
-                if value > max_value:
-                    max_value = value
-                    best_action = action
-            
-            self.V[state_key] = max_value
-            self.policy[state_key] = best_action
-            delta = max(delta, abs(v - self.V[state_key]))
-            
-            if delta < self.theta:
+                new_policy[self.state_to_key(state)] = (next_action, max_next_value)
+
+            self.policy = new_policy
+            sampled_states.extend(expanded_states)
+            sampled_states = list({self.state_to_key(s): s for s in sampled_states}.values())
+
+            if delta < self.epsilon:
                 break
             iteration += 1
             out = {
                 'iterations': iteration,
                 'final_delta': delta,
-                'converged': delta < self.theta
+                'converged': delta < self.epsilon
             }
             print(out)
         return out
     
+
     def act(self, state: State) -> dict:
         """Return best action for given state based on learned policy."""
-        state_key = self._get_state_key(state)
-        return self.policy.get(state_key, self.action_space[0])
+        action, _ = self.policy.get(self.state_to_key(state), ('any', 0.0))
+        return action
     
-    def _get_state_key(self, state: State) -> str:
-        """Convert state array to hashable key."""
-        return np.array(state).tobytes()
-    
+
     def _simulate_action(self, env, state: State, action: dict) -> Tuple[State, float]:
         """Simulate action to get next state and reward."""
         # Create copy of environment to simulate action
@@ -88,6 +126,7 @@ class ValueIterationAgent:
         env_copy.set_state(state)
         next_state, reward, _, _ = env_copy.step(action)
         return next_state, reward
+
 
 class PolicyIterationAgent:
     """
