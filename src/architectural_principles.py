@@ -53,59 +53,59 @@ class ArchitecturalConstraints:
     def default_rooms() -> Dict[str, RoomRequirements]:
         """Default rooms."""
         return {
-            "living": RoomRequirements(
-                room_type=RoomType.LIVING,
-                min_size=(4, 4),
-                max_size=(6, 6),
-                privacy_level=PrivacyLevel.PUBLIC,
-                needs_natural_light=True,
-                adjacent_to={RoomType.DINING, RoomType.ENTRY}
-            ),
-            "bedroom": RoomRequirements(
-                room_type=RoomType.BEDROOM,
-                min_size=(3, 3),
-                max_size=(4, 4),
-                privacy_level=PrivacyLevel.PRIVATE,
-                needs_natural_light=True,
-                min_distance_from={RoomType.ENTRY, RoomType.LIVING}
-            ),
-            "kitchen": RoomRequirements(
-                room_type=RoomType.KITCHEN,
-                min_size=(3, 3),
-                max_size=(4, 4),
-                privacy_level=PrivacyLevel.SEMI,
-                needs_ventilation=True,
-                adjacent_to={RoomType.DINING}
-            ),
-            "dining": RoomRequirements(
-                room_type=RoomType.DINING,
-                min_size=(3, 3),
-                max_size=(4, 5),
-                privacy_level=PrivacyLevel.PUBLIC,
-                needs_natural_light=True,
-                adjacent_to={RoomType.KITCHEN, RoomType.LIVING}
-            ),
-            "bathroom": RoomRequirements(
-                room_type=RoomType.BATHROOM,
-                min_size=(2, 2),
-                max_size=(3, 3),
-                privacy_level=PrivacyLevel.PRIVATE,
-                needs_ventilation=True,
-                min_distance_from={RoomType.KITCHEN, RoomType.DINING}
-            ),
-            "entry": RoomRequirements(
-                room_type=RoomType.ENTRY,
-                min_size=(2, 2),
-                max_size=(3, 3),
-                privacy_level=PrivacyLevel.PUBLIC,
-                adjacent_to={RoomType.LIVING}
-            ),
-            "corridor": RoomRequirements(
-                room_type=RoomType.CORRIDOR,
-                min_size=(1, 3),
-                max_size=(2, 6),
-                privacy_level=PrivacyLevel.SEMI
-            )
+            # "living": RoomRequirements(
+            #     room_type=RoomType.LIVING,
+            #     min_size=(4, 4),
+            #     max_size=(6, 6),
+            #     privacy_level=PrivacyLevel.PUBLIC,
+            #     needs_natural_light=True,
+            #     adjacent_to={RoomType.DINING, RoomType.ENTRY}
+            # ),
+            # "bedroom": RoomRequirements(
+            #     room_type=RoomType.BEDROOM,
+            #     min_size=(3, 3),
+            #     max_size=(4, 4),
+            #     privacy_level=PrivacyLevel.PRIVATE,
+            #     needs_natural_light=True,
+            #     min_distance_from={RoomType.ENTRY, RoomType.LIVING}
+            # ),
+            # "kitchen": RoomRequirements(
+            #     room_type=RoomType.KITCHEN,
+            #     min_size=(3, 3),
+            #     max_size=(4, 4),
+            #     privacy_level=PrivacyLevel.SEMI,
+            #     needs_ventilation=True,
+            #     adjacent_to={RoomType.DINING}
+            # ),
+            # "dining": RoomRequirements(
+            #     room_type=RoomType.DINING,
+            #     min_size=(3, 3),
+            #     max_size=(4, 5),
+            #     privacy_level=PrivacyLevel.PUBLIC,
+            #     needs_natural_light=True,
+            #     adjacent_to={RoomType.KITCHEN, RoomType.LIVING}
+            # ),
+            # "bathroom": RoomRequirements(
+            #     room_type=RoomType.BATHROOM,
+            #     min_size=(2, 2),
+            #     max_size=(3, 3),
+            #     privacy_level=PrivacyLevel.PRIVATE,
+            #     needs_ventilation=True,
+            #     min_distance_from={RoomType.KITCHEN, RoomType.DINING}
+            # ),
+            # "entry": RoomRequirements(
+            #     room_type=RoomType.ENTRY,
+            #     min_size=(2, 2),
+            #     max_size=(3, 3),
+            #     privacy_level=PrivacyLevel.PUBLIC,
+            #     adjacent_to={RoomType.LIVING}
+            # ),
+            # "corridor": RoomRequirements(
+            #     room_type=RoomType.CORRIDOR,
+            #     min_size=(1, 3),
+            #     max_size=(2, 6),
+            #     privacy_level=PrivacyLevel.SEMI
+            # )
         }
 
     @staticmethod

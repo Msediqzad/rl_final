@@ -34,10 +34,11 @@ class ExperimentManager:
         
         if 'value_iteration' in self.config['algorithms']:
             agents['value_iteration'] = ValueIterationAgent(
-                state_space_size=self.env.grid_size,
                 action_space=self._get_action_space(),
                 gamma=self.config['algorithms']['value_iteration']['gamma'],
-                theta=self.config['algorithms']['value_iteration']['theta']
+                epsilon=self.config['algorithms']['value_iteration']['epsilon'],
+                max_iterations=self.config['algorithms']['value_iteration']['max_iterations'],
+                max_states=self.config['algorithms']['value_iteration']['max_states'],
             )
             
         if 'policy_iteration' in self.config['algorithms']:
@@ -83,30 +84,7 @@ class ExperimentManager:
                                 }
                             )
         return actions
-    
 
-    def _get_state_space(self) -> list[dict]:
-        """Define the action space for the environment."""
-        actions = []
-        for room, requirements in self.env.required_rooms.items():
-            actions.append({'type': 'remove_room', 'params': {'name': room}})
-            for w in range(requirements.min_size[0], requirements.max_size[0] + 1):
-                for h in range(requirements.min_size[1], requirements.max_size[1] + 1):
-                    actions.append({'type': 'modify_room', 'params': {'name': room,'size': (w, h)}})
-                    for x in range(self.env.grid_size[0] - w + 1):
-                        for y in range(self.env.grid_size[1] - h + 1):
-                            actions.append(
-                                {
-                                    'type': 'add_room',
-                                    'params': {
-                                        'name': room,
-                                        'room_type': requirements.room_type,
-                                        'position': (x, y),
-                                        'size': (w, h)
-                                    }
-                                }
-                            )
-        return actions
     
     def run_experiments(self):
         """Run experiments for all configured agents."""
@@ -292,14 +270,16 @@ def main():
     """Main entry point for training."""
     config = {
         'env': {
-            'grid_size': (50, 50),
-            'max_steps': 1,
+            'grid_size': (10, 10),
+            'max_steps': 300,
             'required_rooms': ArchitecturalConstraints.default_rooms()
         },
         'algorithms': {
             'value_iteration': {
                 'gamma': 0.95,
-                'theta': 1e-6
+                'epsilon': 1e-6,
+                'max_iterations': 5,
+                'max_states': 100
             },
             # 'policy_iteration': {
             #     'gamma': 0.95,

@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Tuple, Any, NamedTuple
 import copy
+import json
 import numpy as np
 from architectural_principles import (
     ArchitecturalConstraints,
@@ -33,7 +34,7 @@ class ArchitecturalEnvironment:
         self.placed_rooms = {}
         return self._get_state()
     
-    def step(self, action: dict[str, Any]) -> Tuple[np.ndarray, float, bool, dict]:
+    def step(self, action: str) -> Tuple[np.ndarray, float, bool, dict]:
         """
         Execute action in environment.
         
@@ -57,8 +58,8 @@ class ArchitecturalEnvironment:
             metrics: Evaluation of design quality
         """
         self.current_step += 1
-        
-        # Execute action based on type
+        if action['type'] == 'any':
+            reward = self._any()
         if action['type'] == 'add_room':
             reward = self._add_room(action['params'])
         elif action['type'] == 'modify_room':
@@ -84,6 +85,10 @@ class ArchitecturalEnvironment:
     def _get_state(self) -> State:
         """Return current state observation."""
         return State(self.grid.copy(), self.placed_rooms, self.current_step, self.required_rooms)
+    
+    def _any(self)->float:
+
+        return self._calculate_reward()
     
     def _add_room(self, params: dict) -> float:
         """Add a new room to the layout."""

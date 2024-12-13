@@ -1,11 +1,40 @@
 import numpy as np
 import pandas as pd
+import copy
 from dataclasses import dataclass
 from typing import Tuple, Any
 # import torch
 # import torch.nn as nn
 # import torch.optim as optim
 from architectural_principles import State
+
+
+def state_to_key(state) -> str:
+    """Convert state to a hashable key."""
+    return str(state.layout) + str(state.placed_rooms) + str(state.current_step)
+
+
+def sample_initial_states(env):
+    """Generate initial random states."""
+    states = []
+    env.reset()
+    for room_name in env.required_rooms.keys():
+        action = {
+            "type": "add_room",
+            "params": {
+                "name": room_name,
+                "room_type": env.required_rooms[room_name].room_type,
+                "position": (
+                    np.random.randint(0, env.grid_size[0] - 1),
+                    np.random.randint(0, env.grid_size[1] - 1)
+                ),
+                "size": env.required_rooms[room_name].min_size,
+            },
+        }
+        env.step(action)
+        states.append(env._get_state())
+    return states
+
 
 @dataclass
 class ValueIterationAgent:
@@ -20,34 +49,7 @@ class ValueIterationAgent:
     
     def __post_init__(self):
         self.V = {}
-        self.policy = pd.DataFrame()
-    
-
-    def state_to_key(state) -> str:
-        """Convert state to a hashable key."""
-        return str(state.layout) + str(state.placed_rooms) + str(state.current_step)
-
-
-    def sample_initial_states(env):
-        """Generate initial random states."""
-        states = []
-        env.reset()
-        for room_name in env.required_rooms.keys():
-            action = {
-                "type": "add_room",
-                "params": {
-                    "name": room_name,
-                    "room_type": env.required_rooms[room_name].room_type,
-                    "position": (
-                        np.random.randint(0, env.grid_size[0] - 1),
-                        np.random.randint(0, env.grid_size[1] - 1)
-                    ),
-                    "size": env.required_rooms[room_name].min_size,
-                },
-            }
-            env.step(action)
-            states.append(env._get_state())
-        return states
+        self.policy = {}
 
 
     def expand_states(self, env, sampled_states: list[State], actions: list[dict]):
@@ -58,9 +60,9 @@ class ValueIterationAgent:
             for action in actions:
                 next_state, reward, _, _ = env.step(action)
                 # Add new state if it wasn't visited before
-                key = self.state_to_key(next_state)
-                if key not in self.state_value_map and len(self.state_value_map) < self.max_states:
-                    self.state_value_map[key] = (action, 0.0)
+                key = state_to_key(next_state)
+                if key not in self.policy and len(self.policy) < self.max_states:
+                    self.policy[key] = (action, 0.0)
                     expanded_states.append(next_state)
         return expanded_states
 
@@ -73,49 +75,47 @@ class ValueIterationAgent:
             dict containing training statistics
         """
         delta = 0
-        sampled_states = self.sample_initial_states()
+        sampled_states = sample_initial_states(env)
         for state in sampled_states:
-            self.policy[self.state_to_key(state)] = ('any', 0.0)
+            self.policy[state_to_key(state)] = ({'type': 'any'}, 0.0)
         
         iteration = 0
         while iteration < self.max_iterations:
             print(f"Iteration: {iteration}")
-            new_policy = self.policy.copy(deep=True)
-            expanded_states = self.expand_states(sampled_states, self.action_space)
+            new_policy = copy.deepcopy(self.policy)
+            expanded_states = self.expand_states(env, sampled_states, self.action_space)
 
             for state in sampled_states:
                 max_next_value = 0
-                next_action = 'any'
+                next_action = {'type': 'any'}
                 for action in self.action_space:
                     next_state, reward  = self._simulate_action(env, state, action)
-                    key = self.state_to_key(next_state)
-                    _, value = self.policy.get(key, ('any', 0.0))
+                    key = state_to_key(next_state)
+                    _, value = self.policy.get(key, ({'type': 'any'}, 0.0))
                     V_t = reward + self.gamma * value
                     max_next_value = max(max_next_value, V_t)
                     if max_next_value == V_t:
                         next_action = action
                 
-                new_policy[self.state_to_key(state)] = (next_action, max_next_value)
-
+                new_policy[state_to_key(state)] = (next_action, max_next_value)
             self.policy = new_policy
             sampled_states.extend(expanded_states)
-            sampled_states = list({self.state_to_key(s): s for s in sampled_states}.values())
+            sampled_states = list({state_to_key(s): s for s in sampled_states}.values())
 
             if delta < self.epsilon:
                 break
             iteration += 1
-            out = {
-                'iterations': iteration,
-                'final_delta': delta,
-                'converged': delta < self.epsilon
-            }
-            print(out)
+        out = {
+            'iterations': iteration,
+            'final_delta': delta,
+            'converged': delta < self.epsilon
+        }
         return out
     
 
     def act(self, state: State) -> dict:
         """Return best action for given state based on learned policy."""
-        action, _ = self.policy.get(self.state_to_key(state), ('any', 0.0))
+        action, _ = self.policy.get(state_to_key(state), ({'type': 'any'}, 0.0))
         return action
     
 
