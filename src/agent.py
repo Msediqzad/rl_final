@@ -15,7 +15,7 @@ class ValueIterationAgent:
     action_space: list[dict]
     gamma: float = 0.95
     theta: float = 1e-6
-    max_iterations: int = 10
+    max_iterations: int = 50
     
     def __post_init__(self):
         self.V = {}
@@ -64,13 +64,13 @@ class ValueIterationAgent:
             if delta < self.theta:
                 break
             iteration += 1
-            print(f"iteration:{iteration}")
-        
-        return {
-            'iterations': iteration,
-            'final_delta': delta,
-            'converged': delta < self.theta
-        }
+            out = {
+                'iterations': iteration,
+                'final_delta': delta,
+                'converged': delta < self.theta
+            }
+            print(out)
+        return out
     
     def act(self, state: State) -> dict:
         """Return best action for given state based on learned policy."""

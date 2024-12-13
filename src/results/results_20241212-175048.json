@@ -1,0 +1,14 @@
+{
+  "value_iteration": {
+    "training_stats": {
+      "iterations": 50,
+      "final_delta": 3.7098783806634525,
+      "converged": false
+    },
+    "training_time": 45.57390284538269,
+    "final_evaluation": {
+      "mean_reward": -498.37414285714283,
+      "std_reward": 0.0010000000000047748
+    }
+  }
+}
