@@ -1,0 +1,15 @@
+{
+  "value_iteration": {
+    "training_stats": {
+      "iterations": 5,
+      "final_delta": 0,
+      "converged": true
+    },
+    "training_time": 122.538578748703,
+    "final_evaluation": {
+      "mean_reward": -85.7197,
+      "std_reward": 4.296912194820836
+    }
+  }
+}
+2 rooms, 100 data points
