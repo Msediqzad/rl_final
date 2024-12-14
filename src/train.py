@@ -205,7 +205,7 @@ def main():
             'value_iteration': {
                 'gamma': 0.2,
                 'epsilon': 1e-6,
-                'max_iterations': 20,
+                'max_iterations': 10,
                 'max_states': 100
 
             },

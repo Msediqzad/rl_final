@@ -1,0 +1,15 @@
+{
+  "value_iteration": {
+    "training_stats": {
+      "iterations": 10,
+      "final_delta": 0,
+      "converged": true
+    },
+    "training_time": 422.60293531417847,
+    "final_evaluation": {
+      "mean_reward": -88.7129,
+      "std_reward": 4.453141375728178
+    }
+  }
+}
+3 rooms
