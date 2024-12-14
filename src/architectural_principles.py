@@ -61,22 +61,22 @@ class ArchitecturalConstraints:
                 needs_natural_light=True,
                 adjacent_to={RoomType.DINING, RoomType.ENTRY}
             ),
-            # "bedroom": RoomRequirements(
-            #     room_type=RoomType.BEDROOM,
-            #     min_size=(3, 3),
-            #     max_size=(4, 4),
-            #     privacy_level=PrivacyLevel.PRIVATE,
-            #     needs_natural_light=True,
-            #     min_distance_from={RoomType.ENTRY, RoomType.LIVING}
-            # ),
-            # "kitchen": RoomRequirements(
-            #     room_type=RoomType.KITCHEN,
-            #     min_size=(3, 3),
-            #     max_size=(4, 4),
-            #     privacy_level=PrivacyLevel.SEMI,
-            #     needs_ventilation=True,
-            #     adjacent_to={RoomType.DINING}
-            # ),
+            "bedroom": RoomRequirements(
+                room_type=RoomType.BEDROOM,
+                min_size=(3, 3),
+                max_size=(4, 4),
+                privacy_level=PrivacyLevel.PRIVATE,
+                needs_natural_light=True,
+                min_distance_from={RoomType.ENTRY, RoomType.LIVING}
+            ),
+            "kitchen": RoomRequirements(
+                room_type=RoomType.KITCHEN,
+                min_size=(3, 3),
+                max_size=(4, 4),
+                privacy_level=PrivacyLevel.SEMI,
+                needs_ventilation=True,
+                adjacent_to={RoomType.DINING}
+            ),
             # "dining": RoomRequirements(
             #     room_type=RoomType.DINING,
             #     min_size=(3, 3),

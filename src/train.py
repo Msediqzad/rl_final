@@ -126,6 +126,7 @@ class ExperimentManager:
     
     def _save_results(self, results: Dict):
         """Save experiment results to file."""
+        print(results)
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         results_file = self.results_dir / f"results_{timestamp}.json"
         
