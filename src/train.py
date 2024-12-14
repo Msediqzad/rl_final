@@ -87,7 +87,6 @@ class ExperimentManager:
                 training_stats = self._train_deep_rl_agent(agent)
             
             training_time = time.time() - start_time
-            print(agent.action_space)
             results[agent_name] = {
                 'training_stats': training_stats,
                 'training_time': training_time,
@@ -198,15 +197,16 @@ def main():
     config = {
         'env': {
             'grid_size': (10, 10),
-            'max_steps': 300,
+            'max_steps': 100,
             'required_rooms': ArchitecturalConstraints.default_rooms()
         },
         'algorithms': {
             'value_iteration': {
-                'gamma': 0.95,
+                'gamma': 0.2,
                 'epsilon': 1e-6,
-                'max_iterations': 5,
+                'max_iterations': 20,
                 'max_states': 100
+
             },
             # 'policy_iteration': {
             #     'gamma': 0.95,
